@@ -111,7 +111,7 @@ export class BowlingScene {
     const w = this.signageCanvas.width;
     const h = this.signageCanvas.height;
     const resultText = signageResultText(snapshot);
-    const activeName = snapshot.activeBowler === "player" ? "HEROINE" : "RINKA";
+    const activeName = snapshot.activeBowler === "player" ? "MAO" : "RINKA";
 
     const gradient = ctx.createLinearGradient(0, 0, w, h);
     gradient.addColorStop(0, "#171b33");
@@ -142,7 +142,7 @@ export class BowlingScene {
 
     ctx.fillStyle = "#fff8f3";
     ctx.font = "800 34px Segoe UI, sans-serif";
-    ctx.fillText(`HEROINE ${snapshot.playerScore.total}`, 660, 92);
+    ctx.fillText(`MAO ${snapshot.playerScore.total}`, 660, 92);
     ctx.fillText(`RINKA ${snapshot.rivalScore.total}`, 660, 142);
 
     ctx.fillStyle = "#ffd481";

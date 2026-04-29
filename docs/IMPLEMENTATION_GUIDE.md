@@ -4,7 +4,7 @@ This project is a browser bowling game where 2D illustrated characters compete o
 
 ## Target Experience
 
-- The player controls a pink-haired cat-ear heroine shown as a 2D illustration.
+- The player controls Mao, a pink-haired cat-ear bowler shown as a 2D illustration.
 - Rival characters appear as 2D portraits and react to the match.
 - The bowling lane, ball, pins, and collisions are rendered in 3D.
 - Ball and pin movement are driven by Rapier physics, not hand-authored animation.
@@ -79,7 +79,10 @@ This project is a browser bowling game where 2D illustrated characters compete o
 
 - `public/assets/player-bowler.png`
   - Generated with the imagegen skill from the three-view heroine reference.
-  - Current build uses it as the heroine's bowling-wear portrait.
+  - Source image for Mao's bowling-wear portrait.
+
+- `public/assets/player-bowler-portrait.png` and `public/assets/rival-bowler-portrait.png`
+  - Cropped shoulder-up card portraits used in the HUD so facial expressions are readable.
 
 - `public/assets/player-sprite-framed.png` and `public/assets/rival-sprite-framed.png`
   - Pixel-art 8-frame sprite sheets shown in the top-center action-cut window.
@@ -98,6 +101,14 @@ This project is a browser bowling game where 2D illustrated characters compete o
 5. Use the angle and curve controls to shape the shot.
 6. Press `Space` or the throw button to bowl.
 7. Verify that the ball follows the camera, pins fall, the score updates, and the rival takes a turn.
+
+## GitHub Pages Notes
+
+- `vite.config.ts` sets `base: "./"` so built JS and CSS can load from a repository subpath.
+- Runtime image paths in HUD code use `./assets/...`.
+- CSS sprite URLs use paths relative to the emitted CSS asset folder.
+- `public/.nojekyll` is copied into `dist` so GitHub Pages serves the build without Jekyll processing.
+- Build with `npm run build` and publish the `dist` directory.
 
 ## Next Files to Modify
 

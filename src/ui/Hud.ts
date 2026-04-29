@@ -2,6 +2,8 @@ import { SAFE_BALL_LANE_OFFSET } from "../game/content/bowlingDimensions";
 import { FRAME_COUNT } from "../game/simulation/scoring";
 import type { BowlerId, MatchSnapshot, ThrowParams } from "../game/types";
 
+const ASSET_PATH = "./assets/";
+
 export type PerformanceAction = "idle" | "throw" | "strike" | "spare" | "gutter" | "victory" | "defeat";
 export type TimingStage = "ready" | "power" | "curve";
 
@@ -76,7 +78,7 @@ export class Hud {
       : "Ready";
 
     this.scoreGrid.innerHTML = "";
-    this.scoreGrid.appendChild(this.scoreRow("Heroine", scoreLabels.player, snapshot.playerScore.total));
+    this.scoreGrid.appendChild(this.scoreRow("Mao", scoreLabels.player, snapshot.playerScore.total));
     this.scoreGrid.appendChild(this.scoreRow("Rinka", scoreLabels.rival, snapshot.rivalScore.total));
 
     this.updatePerformanceSprites(performance);
@@ -100,15 +102,15 @@ export class Hud {
       </section>
 
       <aside class="character-card heroine-card">
-        <img src="/assets/player-bowler-side.png" alt="Pink-haired cat-ear heroine with side ponytail in bowling wear" />
+        <img src="${ASSET_PATH}player-bowler-portrait.png" alt="Mao, pink-haired cat-ear bowler" />
         <div>
-          <span>Heroine</span>
-          <strong>負けず嫌いの猫耳ボウラー</strong>
+          <span>Mao</span>
+          <strong>Competitive cat-ear bowler</strong>
         </div>
       </aside>
 
       <aside class="character-card rival-card">
-        <img src="/assets/rival-bowler-pony.png" alt="Rival bowler with ponytail portrait" />
+        <img src="${ASSET_PATH}rival-bowler-portrait.png" alt="Rinka, rival bowler with ponytail" />
         <div>
           <span>Rival</span>
           <strong>Rinka, precision stylist</strong>
@@ -118,7 +120,7 @@ export class Hud {
       <section class="performance-window" aria-live="polite">
         <div class="performance-header">
           <span>Action Cut</span>
-          <strong id="performance-bowler">Heroine</strong>
+          <strong id="performance-bowler">Mao</strong>
         </div>
         <div id="sprite-stage" class="sprite-stage player idle" aria-label="Current bowler action animation"></div>
         <p id="quote-text" class="quote-text">Ready.</p>
@@ -156,7 +158,7 @@ export class Hud {
 
       <section id="result-overlay" class="result-overlay" hidden>
         <div class="result-card">
-          <img id="result-image" src="/assets/result-win-v2.png" alt="Match result illustration" />
+          <img id="result-image" src="${ASSET_PATH}result-win-v2.png" alt="Match result illustration" />
           <div class="result-copy">
             <span>Result</span>
             <h2 id="result-title">Victory</h2>
@@ -204,7 +206,7 @@ export class Hud {
   }
 
   private updatePerformanceSprites(performance: PerformanceState): void {
-    this.performanceBowler.textContent = performance.bowler === "player" ? "Heroine" : "Rinka";
+    this.performanceBowler.textContent = performance.bowler === "player" ? "Mao" : "Rinka";
     this.performanceSprite.className = `sprite-stage ${performance.bowler} ${performance.action}`;
 
     if (performance.sequence === this.lastPerformanceSequence) return;
@@ -222,7 +224,7 @@ export class Hud {
     if (!isComplete) return;
 
     const playerWon = snapshot.playerScore.total >= snapshot.rivalScore.total;
-    this.resultImage.src = playerWon ? "/assets/result-win-v2.png" : "/assets/result-lose-v2.png";
+    this.resultImage.src = playerWon ? `${ASSET_PATH}result-win-v2.png` : `${ASSET_PATH}result-lose-v2.png`;
     this.resultTitle.textContent = playerWon ? "Victory" : "Rival Wins";
     this.resultCopy.textContent = playerWon
       ? "最後まで集中した一投が、勝負を決めました。"
