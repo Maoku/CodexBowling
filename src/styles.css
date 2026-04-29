@@ -503,9 +503,7 @@ button:disabled {
   }
 
   .character-card {
-    top: auto;
-    bottom: 178px;
-    width: 118px;
+    display: none;
   }
 
   .character-card img {
@@ -574,11 +572,28 @@ button:disabled {
 
 @media (max-width: 640px) {
   .top-strip {
-    align-items: center;
+    top: 8px;
+    align-items: flex-start;
+    justify-content: flex-end;
+    z-index: 3;
+  }
+
+  .top-strip > div:first-child {
+    display: none;
   }
 
   .turn-chip {
-    min-width: 118px;
+    min-width: 112px;
+    padding: 7px 9px;
+    background: rgba(16, 18, 31, 0.52);
+  }
+
+  .turn-chip span {
+    font-size: 10px;
+  }
+
+  .turn-chip strong {
+    font-size: 12px;
   }
 
   .character-card {
@@ -603,7 +618,7 @@ button:disabled {
   }
 
   .score-panel {
-    top: 82px;
+    top: 164px;
     bottom: auto;
   }
 
@@ -622,5 +637,72 @@ button:disabled {
     right: 12px;
     bottom: 12px;
     width: auto;
+  }
+}
+
+@media (max-width: 640px) and (max-height: 760px) {
+  .performance-window {
+    height: 124px;
+  }
+
+  .sprite-stage {
+    width: 82px;
+    height: 82px;
+    bottom: 28px;
+  }
+
+  .quote-text {
+    bottom: 5px;
+    font-size: 11px;
+  }
+
+  .score-panel {
+    top: 132px;
+    padding: 8px;
+  }
+
+  .score-row {
+    grid-template-columns: 1fr repeat(5, 24px) 32px;
+    gap: 4px;
+  }
+
+  .score-row strong,
+  .score-row span,
+  .score-row b {
+    min-height: 24px;
+    font-size: 10px;
+  }
+
+  .last-result {
+    display: none;
+  }
+
+  .control-panel {
+    padding: 8px;
+  }
+
+  .message {
+    display: none;
+  }
+
+  .control-panel label {
+    grid-template-columns: 54px 1fr;
+    min-height: 24px;
+  }
+
+  .control-panel label + label {
+    margin-top: 3px;
+  }
+
+  .button-row {
+    margin-top: 8px;
+  }
+
+  .hint {
+    display: none;
+  }
+
+  button {
+    min-height: 36px;
   }
 }
