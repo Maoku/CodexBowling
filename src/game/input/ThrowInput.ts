@@ -1,20 +1,21 @@
 import type { ThrowParams } from "../types";
 import { SAFE_BALL_LANE_OFFSET } from "../content/bowlingDimensions";
+import { INPUT_TUNING } from "../content/tuning";
 
 export class ThrowInput {
   private params: ThrowParams = {
-    laneOffset: 0,
-    angle: 0,
-    power: 0.7,
-    curve: 0,
+    laneOffset: INPUT_TUNING.defaultLaneOffset,
+    angle: INPUT_TUNING.defaultAngleRadians,
+    power: INPUT_TUNING.defaultPower,
+    curve: INPUT_TUNING.defaultCurve,
   };
 
   constructor() {
     window.addEventListener("keydown", (event) => {
-      if (event.key.toLowerCase() === "a") this.nudgeLane(-0.08);
-      if (event.key.toLowerCase() === "d") this.nudgeLane(0.08);
-      if (event.key === "ArrowLeft") this.nudgeAngle(-0.015);
-      if (event.key === "ArrowRight") this.nudgeAngle(0.015);
+      if (event.key.toLowerCase() === "a") this.nudgeLane(-INPUT_TUNING.keyboardLaneStepMeters);
+      if (event.key.toLowerCase() === "d") this.nudgeLane(INPUT_TUNING.keyboardLaneStepMeters);
+      if (event.key === "ArrowLeft") this.nudgeAngle(-INPUT_TUNING.keyboardAngleStepRadians);
+      if (event.key === "ArrowRight") this.nudgeAngle(INPUT_TUNING.keyboardAngleStepRadians);
     });
   }
 
@@ -27,15 +28,15 @@ export class ThrowInput {
   }
 
   setAngle(value: number): void {
-    this.params.angle = clamp(value, -0.35, 0.35);
+    this.params.angle = clamp(value, INPUT_TUNING.minAngleRadians, INPUT_TUNING.maxAngleRadians);
   }
 
   setPower(value: number): void {
-    this.params.power = clamp(value, 0.35, 1);
+    this.params.power = clamp(value, INPUT_TUNING.minPower, INPUT_TUNING.maxPower);
   }
 
   setCurve(value: number): void {
-    this.params.curve = clamp(value, -0.6, 0.6);
+    this.params.curve = clamp(value, INPUT_TUNING.minCurve, INPUT_TUNING.maxCurve);
   }
 
   nudgeLane(delta: number): void {

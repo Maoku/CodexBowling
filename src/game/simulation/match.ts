@@ -1,3 +1,4 @@
+import { MATCH_TEXT } from "../content/text";
 import type { BowlerId, MatchPhase, MatchSnapshot, ThrowResult } from "../types";
 import { applyThrow, createScore, FRAME_COUNT, frameLabel } from "./scoring";
 
@@ -7,7 +8,7 @@ export class MatchState {
   private phase: MatchPhase = "aiming";
   private playerScore = createScore();
   private rivalScore = createScore();
-  private message = "レーンを読んで、最初の一投を決めよう。";
+  private message: string = MATCH_TEXT.opening;
   private lastResult: ThrowResult | undefined;
 
   get snapshot(): MatchSnapshot {
@@ -33,14 +34,13 @@ export class MatchState {
   beginThrow(): void {
     if (this.phase !== "aiming") return;
     this.phase = "rolling";
-    this.message = this.activeBowler === "player" ? "ナイスショットを狙え！" : "ライバルが投球中...";
+    this.message = this.activeBowler === "player" ? MATCH_TEXT.playerRolling : MATCH_TEXT.rivalRolling;
   }
 
   beginSettling(): void {
-    if (this.phase === "rolling") {
-      this.phase = "settling";
-      this.message = "ピンの行方を見守ろう。";
-    }
+    if (this.phase !== "rolling") return;
+    this.phase = "settling";
+    this.message = MATCH_TEXT.settling;
   }
 
   applyResult(result: ThrowResult): void {
@@ -52,12 +52,12 @@ export class MatchState {
     }
 
     const reaction = result.isStrike
-      ? "ストライク！レーンが一瞬止まったみたい。"
+      ? MATCH_TEXT.strike
       : result.isSpare
-        ? "スペア！最後まで諦めない一投。"
-        : `${result.knockedPins}本。次で拾いにいこう。`;
+        ? MATCH_TEXT.spare
+        : MATCH_TEXT.playerResult(result.knockedPins);
     this.phase = "showingResult";
-    this.message = this.activeBowler === "player" ? reaction : `ライバルは${result.knockedPins}本倒した。`;
+    this.message = this.activeBowler === "player" ? reaction : MATCH_TEXT.rivalResult(result.knockedPins);
   }
 
   advanceTurn(): void {
@@ -65,14 +65,14 @@ export class MatchState {
 
     if (!this.currentFrameComplete) {
       this.phase = "aiming";
-      this.message = this.activeBowler === "player" ? "残りピンを狙ってもう一投。" : "ライバルの二投目。";
+      this.message = this.activeBowler === "player" ? MATCH_TEXT.playerSecondThrow : MATCH_TEXT.rivalSecondThrow;
       return;
     }
 
     if (this.activeBowler === "player") {
       this.activeBowler = "rival";
       this.phase = "aiming";
-      this.message = "ライバルの番。投球フォームを観察しよう。";
+      this.message = MATCH_TEXT.rivalTurn;
       return;
     }
 
@@ -85,7 +85,7 @@ export class MatchState {
     }
 
     this.phase = "aiming";
-    this.message = `第${this.activeFrame + 1}フレーム。流れをつかもう。`;
+    this.message = MATCH_TEXT.frameStart(this.activeFrame + 1);
   }
 
   reset(): void {
@@ -94,7 +94,7 @@ export class MatchState {
     this.phase = "aiming";
     this.playerScore = createScore();
     this.rivalScore = createScore();
-    this.message = "新しい勝負。深呼吸して一投目へ。";
+    this.message = MATCH_TEXT.reset;
     this.lastResult = undefined;
   }
 
@@ -108,8 +108,8 @@ export class MatchState {
   }
 
   private resultMessage(): string {
-    if (this.playerScore.total > this.rivalScore.total) return "勝利！猫耳ボウラーの集中力が上回った。";
-    if (this.playerScore.total < this.rivalScore.total) return "惜敗。ライバルが今日は一枚上手だった。";
-    return "引き分け。次の勝負で決着をつけよう。";
+    if (this.playerScore.total > this.rivalScore.total) return MATCH_TEXT.playerWin;
+    if (this.playerScore.total < this.rivalScore.total) return MATCH_TEXT.rivalWin;
+    return MATCH_TEXT.draw;
   }
 }

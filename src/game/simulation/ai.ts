@@ -1,4 +1,5 @@
 import type { ThrowParams } from "../types";
+import { RIVAL_TUNING } from "../content/tuning";
 
 interface RivalProfile {
   name: string;
@@ -11,24 +12,41 @@ interface RivalProfile {
 export const RIVAL_PROFILES: RivalProfile[] = [
   {
     name: "Rinka",
-    accuracy: 0.91,
-    power: 0.84,
-    curveBias: -0.035,
-    risk: 0.11,
+    accuracy: RIVAL_TUNING.accuracy,
+    power: RIVAL_TUNING.power,
+    curveBias: RIVAL_TUNING.curveBias,
+    risk: RIVAL_TUNING.baseRisk,
   },
 ];
 
 export function createRivalThrow(frameIndex: number, throwIndex: number): ThrowParams {
   const rival = RIVAL_PROFILES[0];
-  const pressure = frameIndex * 0.025 + throwIndex * 0.02;
-  const wobble = (Math.random() - 0.5) * (1 - rival.accuracy) * 0.36;
-  const riskPush = Math.random() < rival.risk + pressure ? 0.055 : 0;
+  const pressure = frameIndex * RIVAL_TUNING.pressurePerFrame + throwIndex * RIVAL_TUNING.pressurePerThrow;
+  const randomCentered = Math.random() - 0.5;
+  const wobble = randomCentered * (1 - rival.accuracy) * RIVAL_TUNING.wobbleScale;
+  const riskPush = Math.random() < rival.risk + pressure ? RIVAL_TUNING.riskPush : 0;
 
   return {
-    laneOffset: clamp(-0.08 + (Math.random() - 0.5) * 0.2, -0.8, 0.8),
-    angle: clamp(0.035 + wobble + riskPush * 0.25, -0.28, 0.28),
-    power: clamp(rival.power + riskPush + (Math.random() - 0.5) * 0.045, 0.5, 1),
-    curve: clamp(rival.curveBias + (Math.random() - 0.5) * 0.12, -0.45, 0.45),
+    laneOffset: clamp(
+      RIVAL_TUNING.laneAimCenterMeters + (Math.random() - 0.5) * RIVAL_TUNING.laneRandomRangeMeters,
+      -RIVAL_TUNING.laneLimitMeters,
+      RIVAL_TUNING.laneLimitMeters,
+    ),
+    angle: clamp(
+      RIVAL_TUNING.baseAngleRadians + wobble + riskPush * RIVAL_TUNING.riskAngleScale,
+      -RIVAL_TUNING.angleLimitRadians,
+      RIVAL_TUNING.angleLimitRadians,
+    ),
+    power: clamp(
+      rival.power + riskPush + (Math.random() - 0.5) * RIVAL_TUNING.powerRandomRange,
+      RIVAL_TUNING.minPower,
+      RIVAL_TUNING.maxPower,
+    ),
+    curve: clamp(
+      rival.curveBias + (Math.random() - 0.5) * RIVAL_TUNING.curveRandomRange,
+      -RIVAL_TUNING.curveLimit,
+      RIVAL_TUNING.curveLimit,
+    ),
   };
 }
 

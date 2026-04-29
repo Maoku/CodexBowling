@@ -9,6 +9,7 @@ import {
   PIN_MAX_RADIUS,
   PIN_ROW_Z_SPACING,
 } from "../game/content/bowlingDimensions";
+import { PHYSICS_TUNING } from "../game/content/tuning";
 import type { ThrowParams } from "../game/types";
 
 export interface PhysicsPinSnapshot {
@@ -47,18 +48,18 @@ export class BowlingPhysics {
 
   static async create(): Promise<BowlingPhysics> {
     await RAPIER.init();
-    const world = new RAPIER.World({ x: 0, y: -9.81, z: 0 });
+    const world = new RAPIER.World({ x: 0, y: PHYSICS_TUNING.gravityY, z: 0 });
     const ball = world.createRigidBody(
       RAPIER.RigidBodyDesc.dynamic()
-        .setTranslation(0, BALL_RADIUS + 0.015, BALL_START_Z)
-        .setLinearDamping(0.24)
-        .setAngularDamping(0.12),
+        .setTranslation(0, BALL_RADIUS + PHYSICS_TUNING.ballRestHeightMeters, BALL_START_Z)
+        .setLinearDamping(PHYSICS_TUNING.ballLinearDamping)
+        .setAngularDamping(PHYSICS_TUNING.ballAngularDamping),
     );
     world.createCollider(
       RAPIER.ColliderDesc.ball(BALL_RADIUS)
         .setMass(BOWLING_DIMENSIONS.ballMassKg)
-        .setFriction(0.62)
-        .setRestitution(0.2),
+        .setFriction(PHYSICS_TUNING.ballFriction)
+        .setRestitution(PHYSICS_TUNING.ballRestitution),
       ball,
     );
 
@@ -80,7 +81,7 @@ export class BowlingPhysics {
   }
 
   resetBall(laneOffset: number): void {
-    this.ball.setTranslation({ x: laneOffset, y: BALL_RADIUS + 0.015, z: BALL_START_Z }, true);
+    this.ball.setTranslation({ x: laneOffset, y: BALL_RADIUS + PHYSICS_TUNING.ballRestHeightMeters, z: BALL_START_Z }, true);
     this.ball.setRotation({ x: 0, y: 0, z: 0, w: 1 }, true);
     this.ball.setLinvel({ x: 0, y: 0, z: 0 }, true);
     this.ball.setAngvel({ x: 0, y: 0, z: 0 }, true);
@@ -89,11 +90,15 @@ export class BowlingPhysics {
 
   roll(params: ThrowParams): void {
     this.resetBall(params.laneOffset);
-    const speed = 6.5 + params.power * 4.5;
-    const side = Math.sin(params.angle) * speed + params.curve * 0.45;
+    const speed = PHYSICS_TUNING.throwBaseSpeedMetersPerSecond + params.power * PHYSICS_TUNING.throwPowerSpeedMetersPerSecond;
+    const side = Math.sin(params.angle) * speed + params.curve * PHYSICS_TUNING.throwCurveSideVelocity;
     const forward = -Math.cos(params.angle) * speed;
     this.ball.setLinvel({ x: side, y: 0, z: forward }, true);
-    this.ball.setAngvel({ x: -38 - params.power * 32, y: params.curve * 6, z: -params.curve * 10 }, true);
+    this.ball.setAngvel({
+      x: PHYSICS_TUNING.ballBackspinBase + params.power * PHYSICS_TUNING.ballBackspinPerPower,
+      y: params.curve * PHYSICS_TUNING.ballCurveSpinY,
+      z: params.curve * PHYSICS_TUNING.ballCurveSpinZ,
+    }, true);
     this.lastThrowStartedAt = performance.now();
     this.hasRolled = true;
   }
@@ -103,12 +108,22 @@ export class BowlingPhysics {
     if (!this.hasRolled) return;
 
     const velocity = this.ball.linvel();
-    const curveInfluence = this.ball.angvel().y * 0.0008;
-    if (Math.abs(curveInfluence) > 0.0001 && this.ball.translation().z > HEAD_PIN_Z + 1.5) {
+    const curveInfluence = this.ball.angvel().y * PHYSICS_TUNING.curveImpulseFromSpin;
+    if (
+      Math.abs(curveInfluence) > PHYSICS_TUNING.curveImpulseMinimum &&
+      this.ball.translation().z > HEAD_PIN_Z + PHYSICS_TUNING.curveStopsBeforeHeadPinMeters
+    ) {
       this.ball.applyImpulse({ x: curveInfluence, y: 0, z: 0 }, true);
     }
-    if (this.ball.translation().z < HEAD_PIN_Z - 1.2 || this.ball.translation().y < -0.5) {
-      this.ball.setLinvel({ x: velocity.x * 0.94, y: velocity.y, z: velocity.z * 0.94 }, true);
+    if (
+      this.ball.translation().z < HEAD_PIN_Z + PHYSICS_TUNING.pitSlowdownStartsAfterHeadPinMeters ||
+      this.ball.translation().y < PHYSICS_TUNING.pitFallY
+    ) {
+      this.ball.setLinvel({
+        x: velocity.x * PHYSICS_TUNING.pitSlowdownMultiplier,
+        y: velocity.y,
+        z: velocity.z * PHYSICS_TUNING.pitSlowdownMultiplier,
+      }, true);
     }
   }
 
@@ -145,49 +160,68 @@ export class BowlingPhysics {
   isSettled(): boolean {
     if (!this.hasRolled) return false;
     const elapsed = performance.now() - this.lastThrowStartedAt;
-    if (elapsed < 1800) return false;
+    if (elapsed < PHYSICS_TUNING.settleMinimumMs) return false;
 
     const ballVelocity = this.ball.linvel();
-    const ballSlow = Math.hypot(ballVelocity.x, ballVelocity.y, ballVelocity.z) < 0.3;
+    const ballSlow = Math.hypot(ballVelocity.x, ballVelocity.y, ballVelocity.z) < PHYSICS_TUNING.settledBallSpeed;
     const pinsSlow = this.pins.every((pin) => {
       const velocity = pin.body.linvel();
       const angular = pin.body.angvel();
-      return Math.hypot(velocity.x, velocity.y, velocity.z) < 0.18 && Math.hypot(angular.x, angular.y, angular.z) < 0.28;
+      return (
+        Math.hypot(velocity.x, velocity.y, velocity.z) < PHYSICS_TUNING.settledPinLinearSpeed &&
+        Math.hypot(angular.x, angular.y, angular.z) < PHYSICS_TUNING.settledPinAngularSpeed
+      );
     });
 
-    return elapsed > 4800 || (ballSlow && pinsSlow);
+    return elapsed > PHYSICS_TUNING.settleMaximumMs || (ballSlow && pinsSlow);
   }
 
   private createLane(): void {
-    const lane = RAPIER.RigidBodyDesc.fixed().setTranslation(0, -0.04, LANE_CENTER_Z);
+    const lane = RAPIER.RigidBodyDesc.fixed().setTranslation(0, PHYSICS_TUNING.laneSurfaceY, LANE_CENTER_Z);
     const laneBody = this.world.createRigidBody(lane);
     this.world.createCollider(
       RAPIER.ColliderDesc.cuboid(
         BOWLING_DIMENSIONS.laneWidth / 2,
-        0.04,
+        PHYSICS_TUNING.laneColliderHalfHeightMeters,
         BOWLING_DIMENSIONS.laneEndFromFoulLine / 2,
-      ).setFriction(0.5),
+      ).setFriction(PHYSICS_TUNING.laneFriction),
       laneBody,
     );
 
     const gutterX = LANE_HALF_WIDTH + BOWLING_DIMENSIONS.gutterWidth / 2;
-    const leftGutter = this.world.createRigidBody(RAPIER.RigidBodyDesc.fixed().setTranslation(-gutterX, -0.16, LANE_CENTER_Z));
-    const rightGutter = this.world.createRigidBody(RAPIER.RigidBodyDesc.fixed().setTranslation(gutterX, -0.16, LANE_CENTER_Z));
+    const leftGutter = this.world.createRigidBody(RAPIER.RigidBodyDesc.fixed().setTranslation(-gutterX, PHYSICS_TUNING.gutterSurfaceY, LANE_CENTER_Z));
+    const rightGutter = this.world.createRigidBody(RAPIER.RigidBodyDesc.fixed().setTranslation(gutterX, PHYSICS_TUNING.gutterSurfaceY, LANE_CENTER_Z));
     this.world.createCollider(createGutterCollider(), leftGutter);
     this.world.createCollider(createGutterCollider(), rightGutter);
 
-    const sideWallOffset = LANE_HALF_WIDTH + BOWLING_DIMENSIONS.gutterWidth + 0.04;
-    const leftSideWall = this.world.createRigidBody(RAPIER.RigidBodyDesc.fixed().setTranslation(-sideWallOffset, -0.02, LANE_CENTER_Z));
-    const rightSideWall = this.world.createRigidBody(RAPIER.RigidBodyDesc.fixed().setTranslation(sideWallOffset, -0.02, LANE_CENTER_Z));
+    const sideWallOffset = LANE_HALF_WIDTH + BOWLING_DIMENSIONS.gutterWidth + PHYSICS_TUNING.sideWallExtraOffsetMeters;
+    const leftSideWall = this.world.createRigidBody(RAPIER.RigidBodyDesc.fixed().setTranslation(-sideWallOffset, PHYSICS_TUNING.sideWallY, LANE_CENTER_Z));
+    const rightSideWall = this.world.createRigidBody(RAPIER.RigidBodyDesc.fixed().setTranslation(sideWallOffset, PHYSICS_TUNING.sideWallY, LANE_CENTER_Z));
     this.world.createCollider(createLowSideWall(), leftSideWall);
     this.world.createCollider(createLowSideWall(), rightSideWall);
 
-    const pitZ = -BOWLING_DIMENSIONS.laneEndFromFoulLine - 0.8;
-    const pit = this.world.createRigidBody(RAPIER.RigidBodyDesc.fixed().setTranslation(0, -0.28, pitZ));
-    this.world.createCollider(RAPIER.ColliderDesc.cuboid(1.15, 0.08, 0.85).setFriction(0.95), pit);
+    const pitZ = -BOWLING_DIMENSIONS.laneEndFromFoulLine - PHYSICS_TUNING.pitZOffsetMeters;
+    const pit = this.world.createRigidBody(RAPIER.RigidBodyDesc.fixed().setTranslation(0, PHYSICS_TUNING.pitY, pitZ));
+    this.world.createCollider(
+      RAPIER.ColliderDesc.cuboid(
+        PHYSICS_TUNING.pitHalfWidthMeters,
+        PHYSICS_TUNING.pitHalfHeightMeters,
+        PHYSICS_TUNING.pitHalfDepthMeters,
+      ).setFriction(PHYSICS_TUNING.pitFriction),
+      pit,
+    );
 
-    const pitBack = this.world.createRigidBody(RAPIER.RigidBodyDesc.fixed().setTranslation(0, 0.12, pitZ - 1.05));
-    this.world.createCollider(RAPIER.ColliderDesc.cuboid(1.15, 0.28, 0.08).setRestitution(0.05), pitBack);
+    const pitBack = this.world.createRigidBody(
+      RAPIER.RigidBodyDesc.fixed().setTranslation(0, PHYSICS_TUNING.pitBackYOffsetMeters, pitZ - PHYSICS_TUNING.pitBackZOffsetMeters),
+    );
+    this.world.createCollider(
+      RAPIER.ColliderDesc.cuboid(
+        PHYSICS_TUNING.pitHalfWidthMeters,
+        PHYSICS_TUNING.pitBackHalfHeightMeters,
+        PHYSICS_TUNING.pitBackHalfDepthMeters,
+      ).setRestitution(PHYSICS_TUNING.pitBackRestitution),
+      pitBack,
+    );
   }
 
   private createPins(): void {
@@ -198,18 +232,18 @@ export class BowlingPhysics {
       for (let col = 0; col < count; col += 1) {
         const x = (col - (count - 1) / 2) * BOWLING_DIMENSIONS.pinSpacing;
         const z = HEAD_PIN_Z - row * PIN_ROW_Z_SPACING;
-        const start = { x, y: BOWLING_DIMENSIONS.pinHeight / 2 + 0.01, z };
+        const start = { x, y: BOWLING_DIMENSIONS.pinHeight / 2 + PHYSICS_TUNING.pinRestHeightMeters, z };
         const body = this.world.createRigidBody(
           RAPIER.RigidBodyDesc.dynamic()
             .setTranslation(start.x, start.y, start.z)
-            .setLinearDamping(0.08)
-            .setAngularDamping(0.08),
+            .setLinearDamping(PHYSICS_TUNING.pinLinearDamping)
+            .setAngularDamping(PHYSICS_TUNING.pinAngularDamping),
         );
         this.world.createCollider(
           RAPIER.ColliderDesc.cylinder(BOWLING_DIMENSIONS.pinHeight / 2, PIN_MAX_RADIUS)
             .setMass(BOWLING_DIMENSIONS.pinMassKg)
-            .setFriction(0.74)
-            .setRestitution(0.38),
+            .setFriction(PHYSICS_TUNING.pinFriction)
+            .setRestitution(PHYSICS_TUNING.pinRestitution),
           body,
         );
         this.pins.push({ id, body, start });
@@ -222,13 +256,17 @@ export class BowlingPhysics {
 function createGutterCollider(): RAPIER.ColliderDesc {
   return RAPIER.ColliderDesc.cuboid(
     BOWLING_DIMENSIONS.gutterWidth / 2,
-    0.04,
+    PHYSICS_TUNING.gutterColliderHalfHeightMeters,
     BOWLING_DIMENSIONS.laneEndFromFoulLine / 2,
-  ).setFriction(0.86);
+  ).setFriction(PHYSICS_TUNING.gutterFriction);
 }
 
 function createLowSideWall(): RAPIER.ColliderDesc {
-  return RAPIER.ColliderDesc.cuboid(0.035, 0.12, BOWLING_DIMENSIONS.laneEndFromFoulLine / 2).setFriction(0.8);
+  return RAPIER.ColliderDesc.cuboid(
+    PHYSICS_TUNING.sideWallHalfWidthMeters,
+    PHYSICS_TUNING.sideWallHalfHeightMeters,
+    BOWLING_DIMENSIONS.laneEndFromFoulLine / 2,
+  ).setFriction(PHYSICS_TUNING.sideWallFriction);
 }
 
 function isPinDown(
@@ -236,5 +274,5 @@ function isPinDown(
   rotation: { x: number; z: number },
 ): boolean {
   const upY = 1 - 2 * (rotation.x * rotation.x + rotation.z * rotation.z);
-  return upY < 0.72 || position.y < BOWLING_DIMENSIONS.pinHeight * 0.34;
+  return upY < PHYSICS_TUNING.pinUprightThreshold || position.y < BOWLING_DIMENSIONS.pinHeight * PHYSICS_TUNING.pinDownHeightRatio;
 }

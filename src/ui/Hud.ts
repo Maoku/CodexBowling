@@ -1,8 +1,10 @@
 import { SAFE_BALL_LANE_OFFSET } from "../game/content/bowlingDimensions";
+import { ASSET_PATHS, CHARACTER_TEXT, UI_TEXT, bowlerDisplayName } from "../game/content/text";
+import { INPUT_TUNING, UI_TUNING } from "../game/content/tuning";
 import { FRAME_COUNT } from "../game/simulation/scoring";
 import type { BowlerId, MatchSnapshot, ThrowParams } from "../game/types";
 
-const ASSET_PATH = "./assets/";
+const assetUrl = (filename: string) => `${ASSET_PATHS.root}${filename}`;
 
 export type PerformanceAction = "idle" | "throw" | "strike" | "spare" | "gutter" | "victory" | "defeat";
 export type TimingStage = "ready" | "power" | "curve";
@@ -78,8 +80,8 @@ export class Hud {
       : "Ready";
 
     this.scoreGrid.innerHTML = "";
-    this.scoreGrid.appendChild(this.scoreRow("Mao", scoreLabels.player, snapshot.playerScore.total));
-    this.scoreGrid.appendChild(this.scoreRow("Rinka", scoreLabels.rival, snapshot.rivalScore.total));
+    this.scoreGrid.appendChild(this.scoreRow(CHARACTER_TEXT.playerName, scoreLabels.player, snapshot.playerScore.total));
+    this.scoreGrid.appendChild(this.scoreRow(CHARACTER_TEXT.rivalName, scoreLabels.rival, snapshot.rivalScore.total));
 
     this.updatePerformanceSprites(performance);
     this.updateResultOverlay(snapshot);
@@ -92,78 +94,78 @@ export class Hud {
     this.root.innerHTML = `
       <section class="top-strip" aria-live="polite">
         <div>
-          <p class="eyebrow">Nyanko Strike Rivals</p>
-          <h1>5-Frame Duel</h1>
+          <p class="eyebrow">${UI_TEXT.eyebrow}</p>
+          <h1>${UI_TEXT.title}</h1>
         </div>
         <div class="turn-chip">
-          <span id="active-bowler">Player Turn</span>
+          <span id="active-bowler">${UI_TEXT.playerTurn}</span>
           <strong id="frame-info">Frame 1 / 5</strong>
         </div>
       </section>
 
       <aside class="character-card heroine-card">
-        <img src="${ASSET_PATH}player-bowler-portrait.png" alt="Mao, pink-haired cat-ear bowler" />
+        <img src="${assetUrl(ASSET_PATHS.playerPortrait)}" alt="${CHARACTER_TEXT.playerPortraitAlt}" />
         <div>
-          <span>Mao</span>
-          <strong>Competitive cat-ear bowler</strong>
+          <span>${CHARACTER_TEXT.playerCardRole}</span>
+          <strong>${CHARACTER_TEXT.playerCardDescription}</strong>
         </div>
       </aside>
 
       <aside class="character-card rival-card">
-        <img src="${ASSET_PATH}rival-bowler-portrait.png" alt="Rinka, rival bowler with ponytail" />
+        <img src="${assetUrl(ASSET_PATHS.rivalPortrait)}" alt="${CHARACTER_TEXT.rivalPortraitAlt}" />
         <div>
-          <span>Rival</span>
-          <strong>Rinka, precision stylist</strong>
+          <span>${CHARACTER_TEXT.rivalCardRole}</span>
+          <strong>${CHARACTER_TEXT.rivalCardDescription}</strong>
         </div>
       </aside>
 
       <section class="performance-window" aria-live="polite">
         <div class="performance-header">
-          <span>Action Cut</span>
-          <strong id="performance-bowler">Mao</strong>
+          <span>${UI_TEXT.actionCut}</span>
+          <strong id="performance-bowler">${CHARACTER_TEXT.playerName}</strong>
         </div>
         <div id="sprite-stage" class="sprite-stage player idle" aria-label="Current bowler action animation"></div>
-        <p id="quote-text" class="quote-text">Ready.</p>
+        <p id="quote-text" class="quote-text">${UI_TEXT.ready}</p>
       </section>
 
       <section class="score-panel">
         <div id="score-grid" class="score-grid"></div>
-        <p id="last-result" class="last-result">Ready</p>
+        <p id="last-result" class="last-result">${UI_TEXT.ready}</p>
       </section>
 
       <section class="control-panel">
         <p id="message" class="message">レーンを読んで、最初の一投を決めよう。</p>
         <label>
-          <span>Lane</span>
-          <input id="lane-input" type="range" min="${-SAFE_BALL_LANE_OFFSET}" max="${SAFE_BALL_LANE_OFFSET}" step="0.005" value="0" />
+          <span>${UI_TEXT.laneLabel}</span>
+          <input id="lane-input" type="range" min="${-SAFE_BALL_LANE_OFFSET}" max="${SAFE_BALL_LANE_OFFSET}" step="0.005" value="${INPUT_TUNING.defaultLaneOffset}" />
         </label>
         <label>
-          <span>Angle</span>
-          <input id="angle-input" type="range" min="-0.35" max="0.35" step="0.005" value="0" />
+          <span>${UI_TEXT.angleLabel}</span>
+          <input id="angle-input" type="range" min="${INPUT_TUNING.minAngleRadians}" max="${INPUT_TUNING.maxAngleRadians}" step="0.005" value="${INPUT_TUNING.defaultAngleRadians}" />
         </label>
         <label>
-          <span>Power</span>
-          <input id="power-input" type="range" min="0.35" max="1" step="0.01" value="0.7" />
+          <span>${UI_TEXT.powerLabel}</span>
+          <input id="power-input" type="range" min="${INPUT_TUNING.minPower}" max="${INPUT_TUNING.maxPower}" step="0.01" value="${INPUT_TUNING.defaultPower}" />
         </label>
         <label>
-          <span>Curve</span>
-          <input id="curve-input" type="range" min="-0.6" max="0.6" step="0.01" value="0" />
+          <span>${UI_TEXT.curveLabel}</span>
+          <input id="curve-input" type="range" min="${INPUT_TUNING.minCurve}" max="${INPUT_TUNING.maxCurve}" step="0.01" value="${INPUT_TUNING.defaultCurve}" />
         </label>
         <div class="button-row">
-          <button id="throw-button" type="button">Start Speed</button>
-          <button id="reset-button" type="button">Reset</button>
+          <button id="throw-button" type="button">${UI_TEXT.buttonStartSpeed}</button>
+          <button id="reset-button" type="button">${UI_TEXT.reset}</button>
         </div>
-        <p class="hint">A/D: lane, Left/Right: angle, Space: timing</p>
+        <p class="hint">${UI_TEXT.controlsHint}</p>
       </section>
 
       <section id="result-overlay" class="result-overlay" hidden>
         <div class="result-card">
-          <img id="result-image" src="${ASSET_PATH}result-win-v2.png" alt="Match result illustration" />
+          <img id="result-image" src="${assetUrl(ASSET_PATHS.resultWin)}" alt="${UI_TEXT.resultImageAlt}" />
           <div class="result-copy">
-            <span>Result</span>
-            <h2 id="result-title">Victory</h2>
+            <span>${UI_TEXT.result}</span>
+            <h2 id="result-title">${UI_TEXT.victory}</h2>
             <p id="result-copy">ふたりの勝負が決着しました。</p>
-            <button id="result-reset-button" type="button">New Match</button>
+            <button id="result-reset-button" type="button">${UI_TEXT.newMatch}</button>
           </div>
         </div>
       </section>
@@ -206,7 +208,7 @@ export class Hud {
   }
 
   private updatePerformanceSprites(performance: PerformanceState): void {
-    this.performanceBowler.textContent = performance.bowler === "player" ? "Mao" : "Rinka";
+    this.performanceBowler.textContent = bowlerDisplayName(performance.bowler);
     this.performanceSprite.className = `sprite-stage ${performance.bowler} ${performance.action}`;
 
     if (performance.sequence === this.lastPerformanceSequence) return;
@@ -214,7 +216,7 @@ export class Hud {
     this.performanceSprite.style.animation = "none";
     void this.performanceSprite.offsetWidth;
     this.performanceSprite.style.animation =
-      performance.action === "throw" ? "spriteThrow 1150ms steps(1) forwards" : "";
+      performance.action === "throw" ? `spriteThrow ${UI_TUNING.spriteThrowAnimationMs}ms steps(1) forwards` : "";
   }
 
   private updateResultOverlay(snapshot: MatchSnapshot): void {
@@ -224,16 +226,14 @@ export class Hud {
     if (!isComplete) return;
 
     const playerWon = snapshot.playerScore.total >= snapshot.rivalScore.total;
-    this.resultImage.src = playerWon ? `${ASSET_PATH}result-win-v2.png` : `${ASSET_PATH}result-lose-v2.png`;
-    this.resultTitle.textContent = playerWon ? "Victory" : "Rival Wins";
-    this.resultCopy.textContent = playerWon
-      ? "最後まで集中した一投が、勝負を決めました。"
-      : "今日はリンカが一枚上手。次のレーンで取り返しましょう。";
+    this.resultImage.src = assetUrl(playerWon ? ASSET_PATHS.resultWin : ASSET_PATHS.resultLose);
+    this.resultTitle.textContent = playerWon ? UI_TEXT.victory : UI_TEXT.rivalWins;
+    this.resultCopy.textContent = playerWon ? UI_TEXT.resultWinCopy : UI_TEXT.resultLoseCopy;
   }
 }
 
 function buttonTextForTiming(stage: TimingStage): string {
-  if (stage === "power") return "Lock Speed";
-  if (stage === "curve") return "Lock Curve";
-  return "Start Speed";
+  if (stage === "power") return UI_TEXT.buttonLockSpeed;
+  if (stage === "curve") return UI_TEXT.buttonLockCurve;
+  return UI_TEXT.buttonStartSpeed;
 }

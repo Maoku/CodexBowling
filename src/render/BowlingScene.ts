@@ -9,13 +9,15 @@ import {
   PIN_BASE_RADIUS,
   PIN_MAX_RADIUS,
 } from "../game/content/bowlingDimensions";
+import { SIGNAGE_TEXT, bowlerDisplayName } from "../game/content/text";
+import { SCENE_TUNING } from "../game/content/tuning";
 import type { MatchSnapshot, ThrowParams } from "../game/types";
 import type { PhysicsSnapshot } from "../physics/BowlingPhysics";
 
 export class BowlingScene {
   private renderer: THREE.WebGLRenderer;
   private scene = new THREE.Scene();
-  private camera = new THREE.PerspectiveCamera(42, 1, 0.1, 80);
+  private camera = new THREE.PerspectiveCamera(SCENE_TUNING.cameraFovDegrees, 1, SCENE_TUNING.cameraNearMeters, SCENE_TUNING.cameraFarMeters);
   private ballMesh: THREE.Mesh;
   private pinMeshes = new Map<number, THREE.Group>();
   private aimLine: THREE.Mesh;
@@ -34,11 +36,11 @@ export class BowlingScene {
     });
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, SCENE_TUNING.maxDevicePixelRatio));
     this.scene.background = new THREE.Color("#10131f");
-    this.scene.fog = new THREE.Fog("#10131f", 18, 34);
-    this.signageCanvas.width = 1024;
-    this.signageCanvas.height = 256;
+    this.scene.fog = new THREE.Fog("#10131f", SCENE_TUNING.fogNearMeters, SCENE_TUNING.fogFarMeters);
+    this.signageCanvas.width = SCENE_TUNING.signageCanvasWidth;
+    this.signageCanvas.height = SCENE_TUNING.signageCanvasHeight;
     const context = this.signageCanvas.getContext("2d");
     if (!context) {
       throw new Error("Could not create signage canvas context.");
@@ -68,7 +70,7 @@ export class BowlingScene {
     this.laneStartMarker.position.x = params.laneOffset;
     const direction = new THREE.Vector3(Math.sin(params.angle), 0, -Math.cos(params.angle));
     const start = new THREE.Vector3(params.laneOffset, 0.025, BALL_START_Z);
-    const length = 3.4;
+    const length = SCENE_TUNING.aimingArrowLengthMeters;
     const center = start.clone().add(direction.clone().multiplyScalar(length / 2));
     this.aimLine.position.copy(center);
     this.aimLine.scale.set(1, length, 1);
@@ -90,15 +92,22 @@ export class BowlingScene {
     });
 
     if (phase === "rolling") {
-      const targetZ = THREE.MathUtils.clamp(ball.position.z + 0.45, HEAD_PIN_Z + 0.85, 0.74);
-      this.camera.position.lerp(new THREE.Vector3(ball.position.x * 0.72, 0.42, targetZ), 0.16);
-      this.camera.lookAt(ball.position.x * 0.9, 0.1, ball.position.z - 0.85);
+      const targetZ = THREE.MathUtils.clamp(
+        ball.position.z + SCENE_TUNING.rollingCameraAheadMeters,
+        HEAD_PIN_Z + SCENE_TUNING.rollingCameraMinZFromHeadPinMeters,
+        SCENE_TUNING.rollingCameraMaxZ,
+      );
+      this.camera.position.lerp(
+        new THREE.Vector3(ball.position.x * SCENE_TUNING.rollingCameraBallXScale, SCENE_TUNING.rollingCameraY, targetZ),
+        SCENE_TUNING.rollingCameraLerp,
+      );
+      this.camera.lookAt(ball.position.x * SCENE_TUNING.rollingCameraTargetXScale, 0.1, ball.position.z - SCENE_TUNING.rollingCameraMinZFromHeadPinMeters);
     } else if (phase === "settling") {
-      this.camera.position.lerp(new THREE.Vector3(0, 1.35, HEAD_PIN_Z + 2.0), 0.08);
-      this.camera.lookAt(0, 0.18, HEAD_PIN_Z - 0.45);
+      this.camera.position.lerp(new THREE.Vector3(0, SCENE_TUNING.settlingCameraY, HEAD_PIN_Z + SCENE_TUNING.settlingCameraZFromHeadPinMeters), SCENE_TUNING.settlingCameraLerp);
+      this.camera.lookAt(0, SCENE_TUNING.cameraLookAtY, HEAD_PIN_Z - SCENE_TUNING.rollingCameraAheadMeters);
     } else {
-      this.camera.position.lerp(new THREE.Vector3(0, 1.0, 2.1), 0.08);
-      this.camera.lookAt(0, 0.18, HEAD_PIN_Z);
+      this.camera.position.lerp(new THREE.Vector3(0, SCENE_TUNING.idleCameraY, SCENE_TUNING.idleCameraZ), SCENE_TUNING.idleCameraLerp);
+      this.camera.lookAt(0, SCENE_TUNING.cameraLookAtY, HEAD_PIN_Z);
     }
   }
 
@@ -111,7 +120,7 @@ export class BowlingScene {
     const w = this.signageCanvas.width;
     const h = this.signageCanvas.height;
     const resultText = signageResultText(snapshot);
-    const activeName = snapshot.activeBowler === "player" ? "MAO" : "RINKA";
+    const activeName = bowlerDisplayName(snapshot.activeBowler).toUpperCase();
 
     const gradient = ctx.createLinearGradient(0, 0, w, h);
     gradient.addColorStop(0, "#171b33");
@@ -147,7 +156,7 @@ export class BowlingScene {
 
     ctx.fillStyle = "#ffd481";
     ctx.font = "700 26px Segoe UI, sans-serif";
-    ctx.fillText(snapshot.message.slice(0, 28), 46, 210);
+    ctx.fillText(snapshot.message.slice(0, SCENE_TUNING.signageMessageMaxChars), 46, 210);
 
     this.signageTexture.needsUpdate = true;
   }
@@ -356,10 +365,10 @@ export class BowlingScene {
 
 function signageResultText(snapshot: MatchSnapshot): { label: string; color: string } {
   const result = snapshot.lastResult;
-  if (!result) return { label: "READY!", color: "#fff8f3" };
-  if (snapshot.phase === "matchComplete") return { label: "FINAL!", color: "#ffe45c" };
-  if (result.isStrike) return { label: "STRIKE!!", color: "#ff79ad" };
-  if (result.isSpare) return { label: "SPARE!", color: "#83eff7" };
-  if (result.knockedPins === 0) return { label: "GUTTER!", color: "#ff5555" };
-  return { label: `${result.knockedPins} PINS`, color: "#fff8f3" };
+  if (!result) return { label: SIGNAGE_TEXT.ready, color: "#fff8f3" };
+  if (snapshot.phase === "matchComplete") return { label: SIGNAGE_TEXT.final, color: "#ffe45c" };
+  if (result.isStrike) return { label: SIGNAGE_TEXT.strike, color: "#ff79ad" };
+  if (result.isSpare) return { label: SIGNAGE_TEXT.spare, color: "#83eff7" };
+  if (result.knockedPins === 0) return { label: SIGNAGE_TEXT.gutter, color: "#ff5555" };
+  return { label: SIGNAGE_TEXT.pins(result.knockedPins), color: "#fff8f3" };
 }

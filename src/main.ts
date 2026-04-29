@@ -1,5 +1,7 @@
 import "./styles.css";
 import { HEAD_PIN_Z } from "./game/content/bowlingDimensions";
+import { PERFORMANCE_TEXT } from "./game/content/text";
+import { INPUT_TUNING, TIMING_TUNING } from "./game/content/tuning";
 import { ThrowInput } from "./game/input/ThrowInput";
 import { createRivalThrow } from "./game/simulation/ai";
 import { MatchState } from "./game/simulation/match";
@@ -9,8 +11,14 @@ import { BowlingPhysics } from "./physics/BowlingPhysics";
 import { BowlingScene } from "./render/BowlingScene";
 import { Hud, type PerformanceAction, type PerformanceState, type TimingStage } from "./ui/Hud";
 
-const canvas = document.querySelector<HTMLCanvasElement>("#game-canvas");
-const hudRoot = document.querySelector<HTMLElement>("#hud-root");
+const PIN_APPROACH_SETTLE_DISTANCE_METERS = 0.8;
+const APP_SELECTORS = {
+  canvas: "#game-canvas",
+  hudRoot: "#hud-root",
+} as const;
+
+const canvas = document.querySelector<HTMLCanvasElement>(APP_SELECTORS.canvas);
+const hudRoot = document.querySelector<HTMLElement>(APP_SELECTORS.hudRoot);
 
 if (!canvas || !hudRoot) {
   throw new Error("Missing game canvas or HUD root.");
@@ -37,7 +45,7 @@ async function bootstrap(): Promise<void> {
   let performance: PerformanceState = {
     bowler: "player",
     action: "idle",
-    quote: "落ち着いて、まっすぐ狙うよ。",
+    quote: PERFORMANCE_TEXT.initial,
     sequence: 0,
   };
 
@@ -65,7 +73,7 @@ async function bootstrap(): Promise<void> {
     if (timingStage === "ready") {
       timingStage = "power";
       timingStartedAt = window.performance.now();
-      setPerformance("player", "idle", "速度を決めるよ。タイミングを見て！", throwSequence + 1);
+      setPerformance("player", "idle", PERFORMANCE_TEXT.timingSpeed, throwSequence + 1);
       throwSequence += 1;
       return;
     }
@@ -74,7 +82,7 @@ async function bootstrap(): Promise<void> {
       lockedPower = input.value.power;
       timingStage = "curve";
       timingStartedAt = window.performance.now();
-      setPerformance("player", "idle", "次はカーブ。強く曲げるか、まっすぐ行くか！", throwSequence + 1);
+      setPerformance("player", "idle", PERFORMANCE_TEXT.timingCurve, throwSequence + 1);
       throwSequence += 1;
       return;
     }
@@ -111,7 +119,7 @@ async function bootstrap(): Promise<void> {
       if (throwSequence === releaseSequence && fresh.phase === "rolling" && fresh.activeBowler === activeBowler) {
         physics.roll(params);
       }
-    }, 850);
+    }, TIMING_TUNING.throwReleaseDelayMs);
   }
 
   function finishThrow(): void {
@@ -127,7 +135,7 @@ async function bootstrap(): Promise<void> {
     match.applyResult(result);
     setPerformance(match.snapshot.activeBowler, resultAction(result), resultLine(match.snapshot.activeBowler, result), throwSequence + 1);
     throwSequence += 1;
-    resultAdvanceAt = window.performance.now() + 1600;
+    resultAdvanceAt = window.performance.now() + TIMING_TUNING.resultDisplayMs;
     aiThrowQueued = false;
   }
 
@@ -140,7 +148,7 @@ async function bootstrap(): Promise<void> {
     timingStage = "ready";
     lockedPower = input.value.power;
     throwSequence += 1;
-    setPerformance("player", "idle", "新しい勝負。まずは呼吸を合わせよう。", throwSequence);
+    setPerformance("player", "idle", PERFORMANCE_TEXT.reset, throwSequence);
   }
 
   function scoreLabels() {
@@ -162,12 +170,12 @@ async function bootstrap(): Promise<void> {
         if (fresh.phase === "aiming" && fresh.activeBowler === "rival") {
           throwForActiveBowler(createRivalThrow(fresh.activeFrame, match.currentThrowIndex));
         }
-      }, 850);
+      }, TIMING_TUNING.rivalThinkDelayMs);
     }
 
     updateTimingMeters();
 
-    if (snapshot.phase === "rolling" && physicsSnapshot.ball.position.z < HEAD_PIN_Z + 0.8) {
+    if (snapshot.phase === "rolling" && physicsSnapshot.ball.position.z < HEAD_PIN_Z + PIN_APPROACH_SETTLE_DISTANCE_METERS) {
       match.beginSettling();
     }
 
@@ -187,7 +195,7 @@ async function bootstrap(): Promise<void> {
         setPerformance(
           advancedSnapshot.activeBowler,
           "idle",
-          advancedSnapshot.activeBowler === "player" ? "次のピン、ちゃんと拾うよ。" : "リンカがレーンを読んでいる。",
+          advancedSnapshot.activeBowler === "player" ? PERFORMANCE_TEXT.playerNextThrow : PERFORMANCE_TEXT.rivalReadingLane,
           throwSequence + 1,
         );
         throwSequence += 1;
@@ -221,12 +229,13 @@ async function bootstrap(): Promise<void> {
 
     const elapsed = (window.performance.now() - timingStartedAt) / 1000;
     if (timingStage === "power") {
-      const wave = triangleWave(elapsed * 0.92);
-      input.setPower(0.35 + wave * 0.65);
+      const wave = triangleWave(elapsed * TIMING_TUNING.powerWaveCyclesPerSecond);
+      const powerRange = INPUT_TUNING.maxPower - INPUT_TUNING.minPower;
+      input.setPower(INPUT_TUNING.minPower + wave * powerRange);
     } else if (timingStage === "curve") {
-      const wave = Math.sin(elapsed * Math.PI * 1.35);
+      const wave = Math.sin(elapsed * TIMING_TUNING.curveWaveRadiansPerSecond);
       input.setPower(lockedPower);
-      input.setCurve(wave * 0.6);
+      input.setCurve(wave * TIMING_TUNING.curveMeterMax);
     }
   }
 
@@ -236,7 +245,7 @@ async function bootstrap(): Promise<void> {
   }
 
   function throwLine(bowler: PerformanceState["bowler"]): string {
-    return bowler === "player" ? "いくよ、ストライクライン！" : "この角度なら、崩せる。";
+    return bowler === "player" ? PERFORMANCE_TEXT.playerThrow : PERFORMANCE_TEXT.rivalThrow;
   }
 
   function resultAction(result: { isStrike: boolean; isSpare: boolean; knockedPins: number }): PerformanceAction {
@@ -247,17 +256,7 @@ async function bootstrap(): Promise<void> {
   }
 
   function resultLine(bowler: PerformanceState["bowler"], result: { isStrike: boolean; isSpare: boolean; knockedPins: number }): string {
-    if (bowler === "player") {
-      if (result.isStrike) return "やった、ぜんぶ倒れた！今の見てた？";
-      if (result.isSpare) return "ふう、ちゃんと拾えた。まだ勝負はここから。";
-      if (result.knockedPins === 0) return "うそ、ガター？今のは忘れて、次！";
-      return `${result.knockedPins}本かあ。残りはきっちり拾うよ。`;
-    }
-
-    if (result.isStrike) return "リンカ: 当然。ここは私の得意レーンよ。";
-    if (result.isSpare) return "リンカ: 最後の一本まで、逃がさない。";
-    if (result.knockedPins === 0) return "リンカ: くっ、今のはレーンが悪いだけ。";
-    return `リンカ: ${result.knockedPins}本。まだ計算通りよ。`;
+    return PERFORMANCE_TEXT.resultLine(bowler, result);
   }
 }
 
