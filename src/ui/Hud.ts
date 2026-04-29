@@ -97,9 +97,12 @@ export class Hud {
           <p class="eyebrow">${UI_TEXT.eyebrow}</p>
           <h1>${UI_TEXT.title}</h1>
         </div>
-        <div class="turn-chip">
-          <span id="active-bowler">${UI_TEXT.playerTurn}</span>
-          <strong id="frame-info">Frame 1 / 5</strong>
+        <div class="status-stack">
+          <div class="turn-chip">
+            <span id="active-bowler">${UI_TEXT.playerTurn}</span>
+            <strong id="frame-info">Frame 1 / 5</strong>
+          </div>
+          <button id="reset-button" class="reset-button" type="button">${UI_TEXT.reset}</button>
         </div>
       </section>
 
@@ -152,8 +155,7 @@ export class Hud {
           <input id="curve-input" type="range" min="${INPUT_TUNING.minCurve}" max="${INPUT_TUNING.maxCurve}" step="0.01" value="${INPUT_TUNING.defaultCurve}" />
         </label>
         <div class="button-row">
-          <button id="throw-button" type="button">${UI_TEXT.buttonStartSpeed}</button>
-          <button id="reset-button" type="button">${UI_TEXT.reset}</button>
+          <button id="throw-button" class="throw-button" type="button">${UI_TEXT.buttonStartSpeed}</button>
         </div>
         <p class="hint">${UI_TEXT.controlsHint}</p>
       </section>

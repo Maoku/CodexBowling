@@ -32,7 +32,7 @@ export const UI_TEXT = {
   newMatch: "New Match",
   reset: "Reset",
   controlsHint: "A/D: lane, Left/Right: angle, Space: timing",
-  buttonStartSpeed: "Start Speed",
+  buttonStartSpeed: "Start Power",
   buttonLockSpeed: "Lock Speed",
   buttonLockCurve: "Lock Curve",
   laneLabel: "Lane",

@@ -95,6 +95,13 @@ input {
   border-radius: 8px;
 }
 
+.status-stack {
+  display: flex;
+  align-items: flex-start;
+  justify-items: end;
+  gap: 10px;
+}
+
 .turn-chip span {
   color: var(--gold);
   font-size: 12px;
@@ -392,8 +399,6 @@ input[type="range"] {
 
 .button-row {
   display: grid;
-  grid-template-columns: 1fr 0.72fr;
-  gap: 10px;
   margin-top: 13px;
 }
 
@@ -407,8 +412,13 @@ button {
   cursor: pointer;
 }
 
-button:first-child {
+.throw-button {
   background: linear-gradient(135deg, var(--hot), #ffd0e0);
+}
+
+.reset-button {
+  min-width: 120px;
+  background: var(--cyan);
 }
 
 button:disabled {
@@ -704,5 +714,228 @@ button:disabled {
 
   button {
     min-height: 36px;
+  }
+}
+
+@media (max-width: 880px) and (max-aspect-ratio: 1/1) {
+  .top-strip {
+    top: 8px;
+    left: auto;
+    right: 8px;
+    width: 104px;
+    z-index: 5;
+    display: block;
+  }
+
+  .top-strip > div:first-child {
+    display: none;
+  }
+
+  .status-stack {
+    display: grid;
+    gap: 8px;
+  }
+
+  .turn-chip {
+    min-width: 104px;
+    padding: 8px;
+    background: rgba(16, 18, 31, 0.82);
+  }
+
+  .turn-chip span {
+    font-size: 10px;
+  }
+
+  .turn-chip strong {
+    font-size: 13px;
+  }
+
+  .reset-button {
+    min-width: 80px;
+    width: 80px;
+    min-height: 62px;
+    margin-right: 12px;
+    font-size: 18px;
+    box-shadow: 10px 10px 0 rgba(95, 80, 55, 0.62);
+  }
+
+  .performance-window {
+    top: 8px;
+    left: 8px;
+    width: 232px;
+    min-width: 0;
+    height: 154px;
+    transform: none;
+    border-radius: 0;
+  }
+
+  .performance-header {
+    display: none;
+  }
+
+  .sprite-stage {
+    width: 116px;
+    height: 116px;
+    bottom: 30px;
+  }
+
+  .quote-text {
+    left: 6px;
+    right: 6px;
+    bottom: 8px;
+    font-size: 13px;
+    text-align: left;
+  }
+
+  .score-panel {
+    top: 16px;
+    left: 248px;
+    right: 118px;
+    bottom: auto;
+    width: auto;
+    padding: 10px;
+  }
+
+  .score-row {
+    grid-template-columns: 1fr repeat(5, minmax(30px, 1fr)) 48px;
+    gap: 6px;
+  }
+
+  .score-row strong,
+  .score-row span,
+  .score-row b {
+    min-height: 36px;
+    font-size: 13px;
+  }
+
+  .last-result {
+    display: block;
+    margin-top: 8px;
+  }
+
+  .control-panel {
+    left: 9%;
+    right: 9%;
+    bottom: 12px;
+    width: auto;
+    padding: 0 0 12px;
+    border: 0;
+    border-radius: 0;
+    background: linear-gradient(90deg, transparent, rgba(72, 66, 59, 0.88), transparent);
+    box-shadow: none;
+    backdrop-filter: none;
+  }
+
+  .message,
+  .hint {
+    display: none;
+  }
+
+  .control-panel label {
+    grid-template-columns: 76px 1fr;
+    min-height: 42px;
+    gap: 8px;
+  }
+
+  .control-panel label span {
+    font-size: 14px;
+  }
+
+  .control-panel label + label {
+    margin-top: 2px;
+  }
+
+  .button-row {
+    width: min(320px, 62vw);
+    margin: 10px auto 0;
+  }
+
+  .throw-button {
+    min-height: 52px;
+    font-size: 19px;
+    box-shadow: 10px 8px 0 rgba(95, 80, 55, 0.62);
+  }
+}
+
+@media (max-width: 520px) and (max-aspect-ratio: 1/1) {
+  .top-strip {
+    right: 8px;
+    width: 96px;
+  }
+
+  .turn-chip {
+    min-width: 96px;
+  }
+
+  .reset-button {
+    width: 76px;
+    min-width: 76px;
+    min-height: 54px;
+    margin-right: 10px;
+    font-size: 16px;
+  }
+
+  .performance-window {
+    width: calc(100vw - 124px);
+    height: 124px;
+  }
+
+  .sprite-stage {
+    width: 82px;
+    height: 82px;
+    bottom: 28px;
+  }
+
+  .quote-text {
+    bottom: 5px;
+    font-size: 11px;
+  }
+
+  .score-panel {
+    top: 132px;
+    left: 8px;
+    right: 8px;
+    padding: 8px;
+  }
+
+  .score-row {
+    grid-template-columns: 1fr repeat(5, 24px) 32px;
+    gap: 4px;
+  }
+
+  .score-row strong,
+  .score-row span,
+  .score-row b {
+    min-height: 24px;
+    font-size: 10px;
+  }
+
+  .last-result {
+    display: none;
+  }
+
+  .control-panel {
+    left: 12px;
+    right: 12px;
+    bottom: 12px;
+    padding-bottom: 10px;
+  }
+
+  .control-panel label {
+    grid-template-columns: 56px 1fr;
+    min-height: 28px;
+  }
+
+  .control-panel label span {
+    font-size: 12px;
+  }
+
+  .button-row {
+    width: min(318px, 76vw);
+  }
+
+  .throw-button {
+    min-height: 44px;
+    font-size: 17px;
   }
 }
