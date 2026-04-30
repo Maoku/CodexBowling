@@ -959,3 +959,142 @@ button:disabled {
     font-size: 17px;
   }
 }
+
+@media (max-height: 520px) and (min-aspect-ratio: 1/1) {
+  .top-strip {
+    top: 8px;
+    left: auto;
+    right: 8px;
+    width: auto;
+    z-index: 6;
+  }
+
+  .top-strip > div:first-child {
+    display: none;
+  }
+
+  .status-stack {
+    display: flex;
+    gap: 8px;
+  }
+
+  .turn-chip {
+    min-width: 112px;
+    padding: 8px 10px;
+    justify-items: center;
+    background: rgba(16, 18, 31, 0.84);
+  }
+
+  .turn-chip span {
+    font-size: 10px;
+  }
+
+  .turn-chip strong {
+    font-size: 13px;
+    white-space: nowrap;
+  }
+
+  .reset-button {
+    min-width: 108px;
+    width: 108px;
+    min-height: 56px;
+    font-size: 18px;
+    box-shadow: 8px 8px 0 rgba(95, 80, 55, 0.62);
+  }
+
+  .character-card {
+    display: none;
+  }
+
+  .performance-window {
+    top: 8px;
+    left: 8px;
+    width: 260px;
+    min-width: 0;
+    height: 126px;
+    transform: none;
+    border-radius: 8px;
+  }
+
+  .performance-header {
+    top: 8px;
+    left: 10px;
+    right: 10px;
+  }
+
+  .sprite-stage {
+    width: 84px;
+    height: 84px;
+    bottom: 30px;
+  }
+
+  .quote-text {
+    left: 8px;
+    right: 8px;
+    bottom: 5px;
+    min-height: 18px;
+    font-size: 11px;
+  }
+
+  .score-panel {
+    left: 8px;
+    bottom: 8px;
+    width: 330px;
+    padding: 8px;
+  }
+
+  .score-grid {
+    gap: 4px;
+  }
+
+  .score-row {
+    grid-template-columns: 54px repeat(5, 30px) 38px;
+    gap: 4px;
+  }
+
+  .score-row strong,
+  .score-row span,
+  .score-row b {
+    min-height: 28px;
+    font-size: 11px;
+  }
+
+  .last-result {
+    display: none;
+  }
+
+  .control-panel {
+    right: 8px;
+    bottom: 8px;
+    width: min(370px, calc(100vw - 360px));
+    padding: 8px;
+  }
+
+  .message,
+  .hint {
+    display: none;
+  }
+
+  .control-panel label {
+    grid-template-columns: 52px 1fr;
+    min-height: 26px;
+    gap: 8px;
+  }
+
+  .control-panel label + label {
+    margin-top: 3px;
+  }
+
+  .control-panel label span {
+    font-size: 11px;
+  }
+
+  .button-row {
+    margin-top: 8px;
+  }
+
+  .throw-button {
+    min-height: 38px;
+    font-size: 16px;
+  }
+}
