@@ -1,6 +1,11 @@
-# Nyanko Strike Rivals
+# CodexBowling(Nyanko Strike Rivals)
 
-猫耳ボウラーの Mao がライバルの Rinka と対戦する、ブラウザ向け 3D ボウリングゲームです。キャラクター演出はピクセルアート風の 2D スプライトで表示し、レーン、ボール、ピンの挙動は Three.js と Rapier による 3D 物理シミュレーションで動かしています。
+- Codex App
+- GPT-5.5 Mid
+- Skills: Game Studio, Image Gen
+
+を用いて試作したブラウザで動くボウリングゲーム。
+ゲームの設計と依頼実行の検証を目的とした実験プロジェクトです。
 
 ## 操作方法
 
@@ -9,7 +14,6 @@
 - `Space` または `Start Power` ボタン: タイミング入力を進める
 - 1 回目のタイミング: ボール速度を決定
 - 2 回目のタイミング: カーブの強さを決定
-- `Reset`: 現在の勝負をリセット
 
 ゲームは 5 フレーム制です。ストライク、スペア、ガーターなどの結果に応じて、中央上部の演出ウィンドウとピン奥のサイネージが変化します。
 
@@ -32,6 +36,16 @@ http://127.0.0.1:5173/
 npm run build
 npm run preview
 ```
+
+LAN内向けに0.0.0.0でVite起動する
+```bash
+npm run dev:lan
+```
+や
+```bash
+npm run preview:lan
+```
+もあります。
 
 ## GitHub Pages
 
@@ -64,19 +78,7 @@ npm run build
 - スコア、セリフ、サイネージ、勝敗一枚絵などの演出を追加する
 - GitHub Pages で公開しやすい構成にする
 
-## ライセンス方針
 
-このプロジェクト本体は MIT License で公開します。ゲームを OSS として自由に扱ってもらう目的に合っており、改変、再配布、商用利用がしやすい permissive license です。
+## ライセンス
 
-依存モジュールの主なライセンスは次の通りです。
-
-- Three.js: MIT
-- Vite: MIT
-- Rapier 3D JavaScript bindings: Apache-2.0
-- TypeScript: Apache-2.0
-
-MIT License は上記の MIT / Apache-2.0 系依存と組み合わせやすいため、このゲームの公開ライセンスとして適しています。`public/assets/` 以下の生成画像アセットも、別途明記がない限りこのリポジトリと同じ MIT License の対象として扱います。
-
-## 注意
-
-このリポジトリには秘密鍵、API キー、`.env` ファイル、ビルド済み `dist/`、`node_modules/` を含めない運用にしています。公開前には `git status` と `.gitignore` を確認してください。
+このプロジェクトは MIT License です。
