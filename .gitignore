@@ -12,6 +12,7 @@ yarn-error.log*
 pnpm-debug.log*
 
 playtest-*.png
+docs/playtest/
 
 .DS_Store
 Thumbs.db
