@@ -306,18 +306,18 @@ export class BowlingScene {
     this.scene.add(pit);
 
     const back = new THREE.Mesh(
-      new THREE.BoxGeometry(2.4, 0.95, 0.18),
+      new THREE.BoxGeometry(SCENE_TUNING.signagePlaneWidthMeters + 0.35, SCENE_TUNING.signagePlaneHeightMeters + 0.35, 0.18),
       new THREE.MeshStandardMaterial({ color: "#242a48", roughness: 0.6 }),
     );
-    back.position.set(0, 0.45, -BOWLING_DIMENSIONS.laneEndFromFoulLine - 1.9);
+    back.position.set(0, 0.74, -BOWLING_DIMENSIONS.laneEndFromFoulLine - 1.9);
     back.receiveShadow = true;
     this.scene.add(back);
 
     const signage = new THREE.Mesh(
-      new THREE.PlaneGeometry(2.25, 0.56),
+      new THREE.PlaneGeometry(SCENE_TUNING.signagePlaneWidthMeters, SCENE_TUNING.signagePlaneHeightMeters),
       new THREE.MeshBasicMaterial({ map: this.signageTexture, toneMapped: false }),
     );
-    signage.position.set(0, 1.16, -BOWLING_DIMENSIONS.laneEndFromFoulLine - 1.78);
+    signage.position.set(0, 1.42, -BOWLING_DIMENSIONS.laneEndFromFoulLine - 1.78);
     this.scene.add(signage);
 
     const sideGlowMaterial = new THREE.MeshBasicMaterial({ color: "#f47fb1" });

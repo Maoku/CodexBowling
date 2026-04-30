@@ -69,7 +69,8 @@ export const PHYSICS_TUNING = {
   pitFallY: -0.5,
   pitSlowdownMultiplier: 0.94,
   settleMinimumMs: 1800,
-  settleMaximumMs: 4800,
+  settleMaximumMs: 7200,
+  settleStablePinsMs: 650,
   settledBallSpeed: 0.3,
   settledPinLinearSpeed: 0.18,
   settledPinAngularSpeed: 0.28,
@@ -135,5 +136,7 @@ export const SCENE_TUNING = {
   cameraLookAtY: 0.18,
   signageCanvasWidth: 1024,
   signageCanvasHeight: 256,
+  signagePlaneWidthMeters: 4.5,
+  signagePlaneHeightMeters: 1.12,
   signageMessageMaxChars: 28,
 } as const;

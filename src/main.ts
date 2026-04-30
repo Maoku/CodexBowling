@@ -126,6 +126,7 @@ async function bootstrap(): Promise<void> {
   function finishThrow(): void {
     const standingPins = physics.standingPins();
     const knockedPins = pinsKnockedThisThrow(previousStandingPins, standingPins);
+    physics.stopPinMotion();
     const snapshot = match.snapshot;
     const currentFrame =
       snapshot.activeBowler === "player"

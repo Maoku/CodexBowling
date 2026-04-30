@@ -40,6 +40,8 @@ export class BowlingPhysics {
   private pins: PinBody[] = [];
   private lastThrowStartedAt = 0;
   private hasRolled = false;
+  private standingSignature = "";
+  private standingSignatureChangedAt = 0;
 
   private constructor(world: RAPIER.World, ball: RAPIER.RigidBody) {
     this.world = world;
@@ -78,6 +80,7 @@ export class BowlingPhysics {
       pin.body.setAngvel({ x: 0, y: 0, z: 0 }, true);
     });
     this.hasRolled = false;
+    this.resetSettleState();
   }
 
   resetBall(laneOffset: number): void {
@@ -86,6 +89,7 @@ export class BowlingPhysics {
     this.ball.setLinvel({ x: 0, y: 0, z: 0 }, true);
     this.ball.setAngvel({ x: 0, y: 0, z: 0 }, true);
     this.hasRolled = false;
+    this.resetSettleState();
   }
 
   clearDownedPins(standingPinIds: number[]): void {
@@ -112,6 +116,7 @@ export class BowlingPhysics {
     }, true);
     this.lastThrowStartedAt = performance.now();
     this.hasRolled = true;
+    this.resetSettleState();
   }
 
   step(): void {
@@ -168,23 +173,58 @@ export class BowlingPhysics {
       .map((pin) => pin.id);
   }
 
+  stopPinMotion(): void {
+    this.pins.forEach((pin) => {
+      pin.body.setLinvel({ x: 0, y: 0, z: 0 }, true);
+      pin.body.setAngvel({ x: 0, y: 0, z: 0 }, true);
+    });
+  }
+
   isSettled(): boolean {
     if (!this.hasRolled) return false;
     const elapsed = performance.now() - this.lastThrowStartedAt;
     if (elapsed < PHYSICS_TUNING.settleMinimumMs) return false;
+    if (elapsed > PHYSICS_TUNING.settleMaximumMs) return true;
 
+    const now = performance.now();
     const ballVelocity = this.ball.linvel();
     const ballSlow = Math.hypot(ballVelocity.x, ballVelocity.y, ballVelocity.z) < PHYSICS_TUNING.settledBallSpeed;
-    const pinsSlow = this.pins.every((pin) => {
+    const pinState = this.pinSettleState();
+    if (pinState.standingSignature !== this.standingSignature) {
+      this.standingSignature = pinState.standingSignature;
+      this.standingSignatureChangedAt = now;
+      return false;
+    }
+
+    const standingStable = now - this.standingSignatureChangedAt >= PHYSICS_TUNING.settleStablePinsMs;
+    return ballSlow && standingStable && pinState.pinsSlow;
+  }
+
+  private resetSettleState(): void {
+    this.standingSignature = "";
+    this.standingSignatureChangedAt = performance.now();
+  }
+
+  private pinSettleState(): { standingSignature: string; pinsSlow: boolean } {
+    let movingPinCount = 0;
+    const standingPins: number[] = [];
+
+    this.pins.forEach((pin) => {
+      const position = pin.body.translation();
+      const rotation = pin.body.rotation();
       const velocity = pin.body.linvel();
       const angular = pin.body.angvel();
-      return (
+      const pinSlow =
         Math.hypot(velocity.x, velocity.y, velocity.z) < PHYSICS_TUNING.settledPinLinearSpeed &&
-        Math.hypot(angular.x, angular.y, angular.z) < PHYSICS_TUNING.settledPinAngularSpeed
-      );
+        Math.hypot(angular.x, angular.y, angular.z) < PHYSICS_TUNING.settledPinAngularSpeed;
+      if (!pinSlow) movingPinCount += 1;
+      if (!isPinDown(position, rotation)) standingPins.push(pin.id);
     });
 
-    return elapsed > PHYSICS_TUNING.settleMaximumMs || (ballSlow && pinsSlow);
+    return {
+      standingSignature: standingPins.join(","),
+      pinsSlow: movingPinCount === 0,
+    };
   }
 
   private createLane(): void {
