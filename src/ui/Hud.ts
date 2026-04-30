@@ -65,6 +65,8 @@ export class Hud {
     this.angleInput.value = String(params.angle);
     this.powerInput.value = String(params.power);
     this.curveInput.value = String(params.curve);
+    this.root.style.setProperty("--meter-power", `${meterPercent(params.power, INPUT_TUNING.minPower, INPUT_TUNING.maxPower)}%`);
+    this.root.style.setProperty("--meter-curve", `${meterPercent(params.curve, INPUT_TUNING.minCurve, INPUT_TUNING.maxCurve)}%`);
 
     this.message.textContent = snapshot.message;
     this.quoteText.textContent = performance.quote;
@@ -248,4 +250,8 @@ function resultEffectName(snapshot: MatchSnapshot): string {
   if (result.isStrike) return "strike";
   if (result.isSpare) return "spare";
   return "none";
+}
+
+function meterPercent(value: number, min: number, max: number): number {
+  return Math.round(((value - min) / (max - min)) * 100);
 }

@@ -211,7 +211,7 @@ async function bootstrap(): Promise<void> {
     const current = match.snapshot;
     scene.updateAim(input.value);
     scene.updateSignage(current);
-    scene.sync(physicsSnapshot, current.phase);
+    scene.sync(physicsSnapshot, current.phase, current.activeBowler);
     scene.render();
     hud.update(current, input.value, scoreLabels(), performance, timingStage);
     requestAnimationFrame(tick);

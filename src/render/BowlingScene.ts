@@ -11,13 +11,18 @@ import {
 } from "../game/content/bowlingDimensions";
 import { SIGNAGE_TEXT, bowlerDisplayName } from "../game/content/text";
 import { SCENE_TUNING } from "../game/content/tuning";
-import type { MatchSnapshot, ThrowParams } from "../game/types";
+import type { BowlerId, MatchSnapshot, ThrowParams } from "../game/types";
 import type { PhysicsSnapshot } from "../physics/BowlingPhysics";
 
 export class BowlingScene {
   private renderer: THREE.WebGLRenderer;
   private scene = new THREE.Scene();
   private camera = new THREE.PerspectiveCamera(SCENE_TUNING.cameraFovDegrees, 1, SCENE_TUNING.cameraNearMeters, SCENE_TUNING.cameraFarMeters);
+  private ballMaterial = new THREE.MeshStandardMaterial({
+    color: "#ff79ad",
+    roughness: 0.28,
+    metalness: 0.18,
+  });
   private ballMesh: THREE.Mesh;
   private pinMeshes = new Map<number, THREE.Group>();
   private aimLine: THREE.Mesh;
@@ -79,8 +84,9 @@ export class BowlingScene {
     this.aimHead.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), direction);
   }
 
-  sync(snapshot: PhysicsSnapshot, phase: string): void {
+  sync(snapshot: PhysicsSnapshot, phase: string, activeBowler: BowlerId): void {
     const ball = snapshot.ball;
+    this.updateBallMaterial(activeBowler);
     this.ballMesh.position.set(ball.position.x, ball.position.y, ball.position.z);
     this.ballMesh.quaternion.set(ball.rotation.x, ball.rotation.y, ball.rotation.z, ball.rotation.w);
 
@@ -225,9 +231,15 @@ export class BowlingScene {
     const rim = new THREE.PointLight("#ff8fc8", 4.8, 16);
     rim.position.set(1.2, 1.8, HEAD_PIN_Z + 1.2);
     this.scene.add(rim);
+
+    const laneWash = new THREE.PointLight("#83eff7", 3.2, 13);
+    laneWash.position.set(0, 2.4, LANE_CENTER_Z);
+    this.scene.add(laneWash);
   }
 
   private createEnvironment(): void {
+    this.createBowlingAlleyShell();
+
     const laneMaterial = new THREE.MeshStandardMaterial({
       color: "#e6b66c",
       roughness: 0.42,
@@ -243,7 +255,7 @@ export class BowlingScene {
 
     const boardMaterial = new THREE.MeshStandardMaterial({ color: "#f4ca83", roughness: 0.5 });
     const boardWidth = BOWLING_DIMENSIONS.laneWidth / 39;
-    for (let i = -19; i <= 19; i += 1) {
+    for (let i = -18; i <= 18; i += 3) {
       const stripe = new THREE.Mesh(
         new THREE.BoxGeometry(0.003, 0.012, BOWLING_DIMENSIONS.laneEndFromFoulLine - 0.08),
         boardMaterial,
@@ -316,14 +328,63 @@ export class BowlingScene {
     });
   }
 
+  private createBowlingAlleyShell(): void {
+    const floorMaterial = new THREE.MeshStandardMaterial({ color: "#161927", roughness: 0.78 });
+    const wallMaterial = new THREE.MeshStandardMaterial({ color: "#202540", roughness: 0.68 });
+    const accentMaterial = new THREE.MeshStandardMaterial({ color: "#2f365c", roughness: 0.62 });
+    const approachMaterial = new THREE.MeshStandardMaterial({ color: "#b48755", roughness: 0.54, metalness: 0.04 });
+    const lightMaterial = new THREE.MeshBasicMaterial({ color: "#fff0b0" });
+    const adjacentLaneMaterial = new THREE.MeshStandardMaterial({ color: "#5f432d", roughness: 0.58 });
+
+    const floor = new THREE.Mesh(new THREE.BoxGeometry(8.5, 0.08, BOWLING_DIMENSIONS.laneEndFromFoulLine + 8.2), floorMaterial);
+    floor.position.set(0, -0.28, LANE_CENTER_Z + 0.9);
+    floor.receiveShadow = true;
+    this.scene.add(floor);
+
+    const approach = new THREE.Mesh(new THREE.BoxGeometry(3.8, 0.07, 4.6), approachMaterial);
+    approach.position.set(0, -0.11, 2.15);
+    approach.receiveShadow = true;
+    this.scene.add(approach);
+
+    [-2.45, 2.45].forEach((x) => {
+      const sideLane = new THREE.Mesh(new THREE.BoxGeometry(1.45, 0.045, BOWLING_DIMENSIONS.laneEndFromFoulLine), adjacentLaneMaterial);
+      sideLane.position.set(x, -0.12, LANE_CENTER_Z);
+      sideLane.receiveShadow = true;
+      this.scene.add(sideLane);
+
+      const wall = new THREE.Mesh(new THREE.BoxGeometry(0.18, 2.2, BOWLING_DIMENSIONS.laneEndFromFoulLine + 5.2), wallMaterial);
+      wall.position.set(Math.sign(x) * 4.05, 0.78, LANE_CENTER_Z + 0.65);
+      wall.receiveShadow = true;
+      this.scene.add(wall);
+    });
+
+    const backWall = new THREE.Mesh(new THREE.BoxGeometry(8.4, 2.0, 0.18), wallMaterial);
+    backWall.position.set(0, 0.82, -BOWLING_DIMENSIONS.laneEndFromFoulLine - 2.15);
+    backWall.receiveShadow = true;
+    this.scene.add(backWall);
+
+    const ceiling = new THREE.Mesh(new THREE.BoxGeometry(8.4, 0.08, BOWLING_DIMENSIONS.laneEndFromFoulLine + 6.5), accentMaterial);
+    ceiling.position.set(0, 2.08, LANE_CENTER_Z + 0.05);
+    this.scene.add(ceiling);
+
+    for (let z = BALL_START_Z - 1.6; z > HEAD_PIN_Z - 0.8; z -= 5.2) {
+      const light = new THREE.Mesh(new THREE.BoxGeometry(5.4, 0.025, 0.46), lightMaterial);
+      light.position.set(0, 2.02, z);
+      this.scene.add(light);
+    }
+
+    const ballReturn = new THREE.Mesh(
+      new THREE.BoxGeometry(0.32, 0.22, 5.2),
+      new THREE.MeshStandardMaterial({ color: "#27304f", roughness: 0.42, metalness: 0.2 }),
+    );
+    ballReturn.position.set(1.72, 0.01, 0.15);
+    ballReturn.receiveShadow = true;
+    this.scene.add(ballReturn);
+  }
+
   private createBall(): THREE.Mesh {
     const geometry = new THREE.IcosahedronGeometry(BALL_RADIUS, 4);
-    const material = new THREE.MeshStandardMaterial({
-      color: "#ff79ad",
-      roughness: 0.28,
-      metalness: 0.18,
-    });
-    const ball = new THREE.Mesh(geometry, material);
+    const ball = new THREE.Mesh(geometry, this.ballMaterial);
     ball.castShadow = true;
     ball.receiveShadow = true;
     this.scene.add(ball);
@@ -341,6 +402,13 @@ export class BowlingScene {
     });
 
     return ball;
+  }
+
+  private updateBallMaterial(activeBowler: BowlerId): void {
+    const color = activeBowler === "rival" ? "#3db7ff" : "#ff79ad";
+    this.ballMaterial.color.lerp(new THREE.Color(color), 0.18);
+    this.ballMaterial.emissive.set(activeBowler === "rival" ? "#061a35" : "#260817");
+    this.ballMaterial.emissiveIntensity = activeBowler === "rival" ? 0.22 : 0.12;
   }
 
   private createPinMesh(id: number): THREE.Group {
