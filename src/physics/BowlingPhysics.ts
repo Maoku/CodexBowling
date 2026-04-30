@@ -40,6 +40,7 @@ export class BowlingPhysics {
   private pins: PinBody[] = [];
   private lastThrowStartedAt = 0;
   private hasRolled = false;
+  private pinMotionStoppedForSettle = false;
   private standingSignature = "";
   private standingSignatureChangedAt = 0;
 
@@ -123,6 +124,12 @@ export class BowlingPhysics {
     this.world.step();
     if (!this.hasRolled) return;
 
+    const elapsed = performance.now() - this.lastThrowStartedAt;
+    if (!this.pinMotionStoppedForSettle && elapsed > PHYSICS_TUNING.settlePinFreezeMs) {
+      this.stopPinMotion();
+      this.pinMotionStoppedForSettle = true;
+    }
+
     const velocity = this.ball.linvel();
     const curveInfluence = this.ball.angvel().y * PHYSICS_TUNING.curveImpulseFromSpin;
     if (
@@ -201,6 +208,7 @@ export class BowlingPhysics {
   }
 
   private resetSettleState(): void {
+    this.pinMotionStoppedForSettle = false;
     this.standingSignature = "";
     this.standingSignatureChangedAt = performance.now();
   }
