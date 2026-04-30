@@ -109,6 +109,7 @@ async function bootstrap(): Promise<void> {
       physics.resetRack();
       previousStandingPins = allPins();
     } else {
+      physics.clearDownedPins(previousStandingPins);
       physics.resetBall(params.laneOffset);
     }
 

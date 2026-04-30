@@ -121,17 +121,51 @@ export class BowlingScene {
     const h = this.signageCanvas.height;
     const resultText = signageResultText(snapshot);
     const activeName = bowlerDisplayName(snapshot.activeBowler).toUpperCase();
+    const celebration =
+      snapshot.phase === "showingResult" && snapshot.lastResult?.isStrike
+        ? "strike"
+        : snapshot.phase === "showingResult" && snapshot.lastResult?.isSpare
+          ? "spare"
+          : "none";
 
     const gradient = ctx.createLinearGradient(0, 0, w, h);
-    gradient.addColorStop(0, "#171b33");
-    gradient.addColorStop(0.45, "#27133b");
-    gradient.addColorStop(1, "#092f3d");
+    if (celebration === "strike") {
+      gradient.addColorStop(0, "#42133d");
+      gradient.addColorStop(0.45, "#6b1743");
+      gradient.addColorStop(1, "#1b3854");
+    } else if (celebration === "spare") {
+      gradient.addColorStop(0, "#123447");
+      gradient.addColorStop(0.5, "#21466b");
+      gradient.addColorStop(1, "#3c244f");
+    } else {
+      gradient.addColorStop(0, "#171b33");
+      gradient.addColorStop(0.45, "#27133b");
+      gradient.addColorStop(1, "#092f3d");
+    }
     ctx.fillStyle = gradient;
     ctx.fillRect(0, 0, w, h);
 
-    ctx.fillStyle = "rgba(255, 121, 173, 0.22)";
-    for (let x = -80; x < w; x += 170) {
-      ctx.fillRect(x, 0, 44, h);
+    if (celebration !== "none") {
+      const cx = w * 0.52;
+      const cy = h * 0.52;
+      ctx.save();
+      ctx.translate(cx, cy);
+      ctx.rotate((performance.now() / 420) % (Math.PI * 2));
+      ctx.strokeStyle = celebration === "strike" ? "rgba(255, 228, 92, 0.58)" : "rgba(131, 239, 247, 0.52)";
+      ctx.lineWidth = 18;
+      for (let i = 0; i < 28; i += 1) {
+        ctx.rotate((Math.PI * 2) / 28);
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.lineTo(w, 0);
+        ctx.stroke();
+      }
+      ctx.restore();
+    } else {
+      ctx.fillStyle = "rgba(255, 121, 173, 0.22)";
+      for (let x = -80; x < w; x += 170) {
+        ctx.fillRect(x, 0, 44, h);
+      }
     }
 
     ctx.strokeStyle = "#83eff7";
@@ -145,9 +179,14 @@ export class BowlingScene {
     ctx.font = "800 38px Segoe UI, sans-serif";
     ctx.fillText(`FRAME ${Math.min(snapshot.activeFrame + 1, 5)} / 5  ${activeName}`, 46, 64);
 
+    if (celebration !== "none") {
+      ctx.shadowColor = resultText.color;
+      ctx.shadowBlur = 24;
+    }
     ctx.fillStyle = resultText.color;
     ctx.font = "900 82px Segoe UI, sans-serif";
     ctx.fillText(resultText.label, 46, 150);
+    ctx.shadowBlur = 0;
 
     ctx.fillStyle = "#fff8f3";
     ctx.font = "800 34px Segoe UI, sans-serif";

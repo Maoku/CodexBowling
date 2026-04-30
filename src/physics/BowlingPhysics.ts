@@ -88,6 +88,17 @@ export class BowlingPhysics {
     this.hasRolled = false;
   }
 
+  clearDownedPins(standingPinIds: number[]): void {
+    const standing = new Set(standingPinIds);
+    this.pins.forEach((pin) => {
+      if (standing.has(pin.id)) return;
+      pin.body.setTranslation({ x: pin.start.x, y: -4, z: pin.start.z }, true);
+      pin.body.setRotation({ x: 0, y: 0, z: 0, w: 1 }, true);
+      pin.body.setLinvel({ x: 0, y: 0, z: 0 }, true);
+      pin.body.setAngvel({ x: 0, y: 0, z: 0 }, true);
+    });
+  }
+
   roll(params: ThrowParams): void {
     this.resetBall(params.laneOffset);
     const speed = PHYSICS_TUNING.throwBaseSpeedMetersPerSecond + params.power * PHYSICS_TUNING.throwPowerSpeedMetersPerSecond;

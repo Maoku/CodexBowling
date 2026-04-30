@@ -48,6 +48,30 @@ input {
   z-index: 2;
 }
 
+#hud-root::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+  opacity: 0;
+  mix-blend-mode: screen;
+}
+
+#hud-root[data-result="strike"]::after {
+  animation: resultFlash 1100ms ease-out;
+  background:
+    radial-gradient(circle at 50% 42%, rgba(255, 255, 255, 0.9), transparent 0 8%, rgba(255, 121, 173, 0.45) 18%, transparent 48%),
+    repeating-conic-gradient(from 18deg, rgba(255, 228, 92, 0.36) 0deg 8deg, transparent 8deg 18deg);
+}
+
+#hud-root[data-result="spare"]::after {
+  animation: resultFlash 900ms ease-out;
+  background:
+    radial-gradient(circle at 50% 42%, rgba(131, 239, 247, 0.7), transparent 0 10%, rgba(131, 239, 247, 0.3) 22%, transparent 52%),
+    repeating-linear-gradient(135deg, rgba(131, 239, 247, 0.24) 0 16px, transparent 16px 34px);
+}
+
 .top-strip {
   position: absolute;
   top: 18px;
@@ -327,6 +351,22 @@ input {
   }
 }
 
+@keyframes resultFlash {
+  0% {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+
+  18% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0;
+    transform: scale(1.08);
+  }
+}
+
 .control-panel {
   position: absolute;
   right: 22px;
@@ -495,6 +535,28 @@ button:disabled {
   margin: 0 0 12px;
   font-size: 13px;
   line-height: 1.45;
+}
+
+.result-score-grid {
+  display: grid;
+  gap: 6px;
+  margin: 0 0 12px;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.result-score-grid .score-row {
+  grid-template-columns: 64px repeat(5, minmax(24px, 1fr)) 38px;
+  gap: 4px;
+}
+
+.result-score-grid .score-row strong,
+.result-score-grid .score-row span,
+.result-score-grid .score-row b {
+  min-height: 24px;
+  font-size: 11px;
 }
 
 .result-copy button {

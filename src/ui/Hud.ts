@@ -29,7 +29,6 @@ export class Hud {
   private root: HTMLElement;
   private callbacks: HudCallbacks;
   private throwButton!: HTMLButtonElement;
-  private resetButton!: HTMLButtonElement;
   private laneInput!: HTMLInputElement;
   private angleInput!: HTMLInputElement;
   private powerInput!: HTMLInputElement;
@@ -46,6 +45,7 @@ export class Hud {
   private resultTitle!: HTMLElement;
   private resultImage!: HTMLImageElement;
   private resultCopy!: HTMLElement;
+  private resultScoreGrid!: HTMLElement;
   private lastPerformanceSequence = -1;
 
   constructor(root: HTMLElement, callbacks: HudCallbacks) {
@@ -74,7 +74,6 @@ export class Hud {
     this.throwButton.textContent = buttonTextForTiming(timingStage);
     this.powerInput.disabled = snapshot.activeBowler === "player";
     this.curveInput.disabled = snapshot.activeBowler === "player";
-    this.resetButton.textContent = snapshot.phase === "matchComplete" ? "New Match" : "Reset";
     this.lastResult.textContent = snapshot.lastResult
       ? `${snapshot.lastResult.knockedPins} pins / standing ${snapshot.lastResult.standingPins.length}`
       : "Ready";
@@ -84,10 +83,11 @@ export class Hud {
     this.scoreGrid.appendChild(this.scoreRow(CHARACTER_TEXT.rivalName, scoreLabels.rival, snapshot.rivalScore.total));
 
     this.updatePerformanceSprites(performance);
-    this.updateResultOverlay(snapshot);
+    this.updateResultOverlay(snapshot, scoreLabels);
 
     this.root.dataset.phase = snapshot.phase;
     this.root.dataset.turn = snapshot.activeBowler;
+    this.root.dataset.result = resultEffectName(snapshot);
   }
 
   private renderShell(): void {
@@ -102,7 +102,6 @@ export class Hud {
             <span id="active-bowler">${UI_TEXT.playerTurn}</span>
             <strong id="frame-info">Frame 1 / 5</strong>
           </div>
-          <button id="reset-button" class="reset-button" type="button">${UI_TEXT.reset}</button>
         </div>
       </section>
 
@@ -167,6 +166,7 @@ export class Hud {
             <span>${UI_TEXT.result}</span>
             <h2 id="result-title">${UI_TEXT.victory}</h2>
             <p id="result-copy">ふたりの勝負が決着しました。</p>
+            <div id="result-score-grid" class="result-score-grid"></div>
             <button id="result-reset-button" type="button">${UI_TEXT.newMatch}</button>
           </div>
         </div>
@@ -174,7 +174,6 @@ export class Hud {
     `;
 
     this.throwButton = this.root.querySelector("#throw-button")!;
-    this.resetButton = this.root.querySelector("#reset-button")!;
     this.laneInput = this.root.querySelector("#lane-input")!;
     this.angleInput = this.root.querySelector("#angle-input")!;
     this.powerInput = this.root.querySelector("#power-input")!;
@@ -191,9 +190,9 @@ export class Hud {
     this.resultTitle = this.root.querySelector("#result-title")!;
     this.resultImage = this.root.querySelector("#result-image")!;
     this.resultCopy = this.root.querySelector("#result-copy")!;
+    this.resultScoreGrid = this.root.querySelector("#result-score-grid")!;
 
     this.throwButton.addEventListener("click", this.callbacks.onThrow);
-    this.resetButton.addEventListener("click", this.callbacks.onReset);
     this.root.querySelector("#result-reset-button")!.addEventListener("click", this.callbacks.onReset);
     this.laneInput.addEventListener("input", () => this.callbacks.onLaneChange(Number(this.laneInput.value)));
     this.angleInput.addEventListener("input", () => this.callbacks.onAngleChange(Number(this.angleInput.value)));
@@ -221,7 +220,7 @@ export class Hud {
       performance.action === "throw" ? `spriteThrow ${UI_TUNING.spriteThrowAnimationMs}ms steps(1) forwards` : "";
   }
 
-  private updateResultOverlay(snapshot: MatchSnapshot): void {
+  private updateResultOverlay(snapshot: MatchSnapshot, scoreLabels: { player: string[]; rival: string[] }): void {
     const isComplete = snapshot.phase === "matchComplete";
     this.resultOverlay.hidden = !isComplete;
     this.resultOverlay.style.display = isComplete ? "grid" : "none";
@@ -231,6 +230,9 @@ export class Hud {
     this.resultImage.src = assetUrl(playerWon ? ASSET_PATHS.resultWin : ASSET_PATHS.resultLose);
     this.resultTitle.textContent = playerWon ? UI_TEXT.victory : UI_TEXT.rivalWins;
     this.resultCopy.textContent = playerWon ? UI_TEXT.resultWinCopy : UI_TEXT.resultLoseCopy;
+    this.resultScoreGrid.innerHTML = "";
+    this.resultScoreGrid.appendChild(this.scoreRow(CHARACTER_TEXT.playerName, scoreLabels.player, snapshot.playerScore.total));
+    this.resultScoreGrid.appendChild(this.scoreRow(CHARACTER_TEXT.rivalName, scoreLabels.rival, snapshot.rivalScore.total));
   }
 }
 
@@ -238,4 +240,12 @@ function buttonTextForTiming(stage: TimingStage): string {
   if (stage === "power") return UI_TEXT.buttonLockSpeed;
   if (stage === "curve") return UI_TEXT.buttonLockCurve;
   return UI_TEXT.buttonStartSpeed;
+}
+
+function resultEffectName(snapshot: MatchSnapshot): string {
+  const result = snapshot.lastResult;
+  if (snapshot.phase !== "showingResult" || !result) return "none";
+  if (result.isStrike) return "strike";
+  if (result.isSpare) return "spare";
+  return "none";
 }
