@@ -860,23 +860,36 @@ button:disabled {
 @media (max-width: 520px) and (max-aspect-ratio: 1/1) {
   .top-strip {
     right: 8px;
-    width: 96px;
+    width: 82px;
   }
 
   .turn-chip {
-    min-width: 96px;
+    min-width: 82px;
+    padding: 6px;
+    justify-items: center;
+  }
+
+  .turn-chip span,
+  .turn-chip strong {
+    text-align: center;
+  }
+
+  .turn-chip strong {
+    font-size: 11px;
+    white-space: nowrap;
   }
 
   .reset-button {
-    width: 76px;
-    min-width: 76px;
-    min-height: 54px;
-    margin-right: 10px;
-    font-size: 16px;
+    width: 70px;
+    min-width: 70px;
+    min-height: 46px;
+    margin-right: 6px;
+    font-size: 14px;
+    box-shadow: 8px 8px 0 rgba(95, 80, 55, 0.62);
   }
 
   .performance-window {
-    width: calc(100vw - 124px);
+    width: calc(100vw - 106px);
     height: 124px;
   }
 
@@ -894,20 +907,27 @@ button:disabled {
   .score-panel {
     top: 132px;
     left: 8px;
-    right: 8px;
+    right: 96px;
     padding: 8px;
   }
 
   .score-row {
-    grid-template-columns: 1fr repeat(5, 24px) 32px;
-    gap: 4px;
+    grid-template-columns: 45px repeat(5, minmax(26px, 1fr)) 34px;
+    gap: 5px;
   }
 
   .score-row strong,
   .score-row span,
   .score-row b {
-    min-height: 24px;
+    min-height: 28px;
     font-size: 10px;
+  }
+
+  .score-row span,
+  .score-row b {
+    min-width: 0;
+    padding: 0 2px;
+    white-space: nowrap;
   }
 
   .last-result {
