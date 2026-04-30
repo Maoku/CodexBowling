@@ -1,5 +1,8 @@
 # CodexBowling(Nyanko Strike Rivals)
 
+デモページ( GitHub Pages )
+https://maoku.github.io/CodexBowling/
+
 - Codex App
 - GPT-5.5 Mid
 - Skills: Game Studio, Image Gen
