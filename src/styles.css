@@ -639,6 +639,13 @@ button:disabled {
 }
 
 @media (max-width: 880px) {
+  #hud-root[data-phase="rolling"] .score-panel,
+  #hud-root[data-phase="rolling"] .control-panel,
+  #hud-root[data-phase="settling"] .score-panel,
+  #hud-root[data-phase="settling"] .control-panel {
+    display: none;
+  }
+
   .top-strip {
     left: 12px;
     right: 12px;
