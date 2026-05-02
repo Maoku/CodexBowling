@@ -98,6 +98,7 @@ async function bootstrap(): Promise<void> {
     const activeBowler = snapshot.activeBowler;
     const releaseSequence = throwSequence + 1;
     throwSequence = releaseSequence;
+    scene.setThrowLaneOffset(params.laneOffset);
 
     if (activeBowler === "player") {
       scene.updateAim(params);
@@ -115,6 +116,7 @@ async function bootstrap(): Promise<void> {
 
     match.beginThrow();
     setPerformance(activeBowler, "throw", throwLine(activeBowler), releaseSequence);
+    scene.startThrowBillboardClock(window.performance.now());
     window.setTimeout(() => {
       const fresh = match.snapshot;
       if (throwSequence === releaseSequence && fresh.phase === "rolling" && fresh.activeBowler === activeBowler) {
@@ -212,7 +214,7 @@ async function bootstrap(): Promise<void> {
     const current = match.snapshot;
     scene.updateAim(input.value);
     scene.updateSignage(current);
-    scene.sync(physicsSnapshot, current.phase, current.activeBowler);
+    scene.sync(physicsSnapshot, current);
     scene.render();
     hud.update(current, input.value, scoreLabels(), performance, timingStage);
     requestAnimationFrame(tick);
@@ -257,7 +259,10 @@ async function bootstrap(): Promise<void> {
     return "idle";
   }
 
-  function resultLine(bowler: PerformanceState["bowler"], result: { isStrike: boolean; isSpare: boolean; knockedPins: number }): string {
+  function resultLine(
+    bowler: PerformanceState["bowler"],
+    result: { isStrike: boolean; isSpare: boolean; knockedPins: number; standingPins: number[] },
+  ): string {
     return PERFORMANCE_TEXT.resultLine(bowler, result);
   }
 }

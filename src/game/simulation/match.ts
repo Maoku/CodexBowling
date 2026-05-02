@@ -1,4 +1,4 @@
-import { MATCH_TEXT } from "../content/text";
+import { MATCH_TEXT, isSplitResult, matchSplitResultLine } from "../content/text";
 import type { BowlerId, MatchPhase, MatchSnapshot, ThrowResult } from "../types";
 import { applyThrow, createScore, FRAME_COUNT, frameLabel } from "./scoring";
 
@@ -51,13 +51,17 @@ export class MatchState {
       this.rivalScore = applyThrow(this.rivalScore, this.activeFrame, result);
     }
 
-    const reaction = result.isStrike
-      ? MATCH_TEXT.strike
-      : result.isSpare
-        ? MATCH_TEXT.spare
-        : MATCH_TEXT.playerResult(result.knockedPins);
+    const reaction = isSplitResult(result)
+      ? matchSplitResultLine(this.activeBowler, result)
+      : this.activeBowler === "player"
+        ? result.isStrike
+          ? MATCH_TEXT.strike
+          : result.isSpare
+            ? MATCH_TEXT.spare
+            : MATCH_TEXT.playerResult(result.knockedPins)
+        : MATCH_TEXT.rivalResult(result.knockedPins);
     this.phase = "showingResult";
-    this.message = this.activeBowler === "player" ? reaction : MATCH_TEXT.rivalResult(result.knockedPins);
+    this.message = reaction;
   }
 
   advanceTurn(): void {

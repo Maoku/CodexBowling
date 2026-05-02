@@ -51,6 +51,18 @@ export const MATCH_TEXT = {
   settling: "ピンの行方を見守ろう。",
   strike: "ストライク！レーンが一瞬止まったみたい。",
   spare: "スペア！最後まで諦めない一投。",
+  splitResults: {
+    player: [
+      "スプリット！でも、ここから拾えたら最高に気持ちいいよ。",
+      "うわ、割れちゃった。角度を信じて、一本ずつ狙おう。",
+      "難しい形だね。落ち着いて、通すラインを見つけよう。",
+    ],
+    rival: [
+      "リンカ: スプリットね。ここからが腕の見せどころよ。",
+      "リンカ: 厄介な残り方。でも計算はまだ終わってない。",
+      "リンカ: 割れたわね。次の一投で空気を変える。",
+    ],
+  },
   playerResult: (pins: number) => `${pins}本。次で拾いにいこう。`,
   rivalResult: (pins: number) => `ライバルは${pins}本倒した。`,
   playerSecondThrow: "残りピンを狙ってもう一投。",
@@ -73,17 +85,19 @@ export const PERFORMANCE_TEXT = {
   playerNextThrow: "次のピン、ちゃんと拾うよ。",
   rivalReadingLane: "リンカがレーンを読んでいる。",
   matchComplete: (snapshot: MatchSnapshot) => snapshot.message,
-  resultLine: (bowler: BowlerId, result: Pick<ThrowResult, "isStrike" | "isSpare" | "knockedPins">) => {
+  resultLine: (bowler: BowlerId, result: Pick<ThrowResult, "isStrike" | "isSpare" | "knockedPins" | "standingPins">) => {
     if (bowler === "player") {
       if (result.isStrike) return "やった、ぜんぶ倒れた！今の見てた？";
       if (result.isSpare) return "ふう、ちゃんと拾えた。まだ勝負はここから。";
       if (result.knockedPins === 0) return "うそ、ガター？今のは忘れて、次！";
+      if (isSplitResult(result)) return chooseSplitLine("player", result, PERFORMANCE_SPLIT_LINES);
       return `${result.knockedPins}本かあ。残りはきっちり拾うよ。`;
     }
 
     if (result.isStrike) return "リンカ: 当然。このレーンは読めてる。";
     if (result.isSpare) return "リンカ: 最後の一本まで逃さない。";
     if (result.knockedPins === 0) return "リンカ: くっ、今のはレーンが悪いだけ。";
+    if (isSplitResult(result)) return chooseSplitLine("rival", result, PERFORMANCE_SPLIT_LINES);
     return `リンカ: ${result.knockedPins}本。まだ計算通りよ。`;
   },
 } as const;
@@ -99,4 +113,43 @@ export const SIGNAGE_TEXT = {
 
 export function bowlerDisplayName(bowler: BowlerId): string {
   return bowler === "player" ? CHARACTER_TEXT.playerName : CHARACTER_TEXT.rivalName;
+}
+
+const PERFORMANCE_SPLIT_LINES = {
+  player: [
+    "わ、きれいに割れた。でもまだ拾える形を探すよ。",
+    "むずかしい残り方だね。次はラインを少し外から通す。",
+    "スプリットかあ。ここで決めたら流れを持っていける！",
+  ],
+  rival: [
+    "リンカ: スプリット。面白いじゃない、燃えてきたわ。",
+    "リンカ: 左右に割れたわね。次の角度で取り返す。",
+    "リンカ: 簡単には終わらせてくれないレーンね。",
+  ],
+} as const;
+
+export function matchSplitResultLine(bowler: BowlerId, result: Pick<ThrowResult, "knockedPins" | "standingPins">): string {
+  return chooseSplitLine(bowler, result, MATCH_TEXT.splitResults);
+}
+
+export function isSplitResult(result: Pick<ThrowResult, "isStrike" | "isSpare" | "knockedPins" | "standingPins">): boolean {
+  if (result.isStrike || result.isSpare || result.knockedPins === 0) return false;
+  if (result.standingPins.length < 2 || result.standingPins.includes(1)) return false;
+
+  const leftPins = new Set([2, 4, 7, 8]);
+  const rightPins = new Set([3, 6, 9, 10]);
+  const hasLeft = result.standingPins.some((pin) => leftPins.has(pin));
+  const hasRight = result.standingPins.some((pin) => rightPins.has(pin));
+  const hasCenterBridge = result.standingPins.some((pin) => pin === 5);
+  return hasLeft && hasRight && !hasCenterBridge;
+}
+
+function chooseSplitLine(
+  bowler: BowlerId,
+  result: Pick<ThrowResult, "knockedPins" | "standingPins">,
+  lines: Record<BowlerId, readonly string[]>,
+): string {
+  const lineSet = lines[bowler];
+  const standingSum = result.standingPins.reduce((total, pin) => total + pin, 0);
+  return lineSet[(standingSum + result.knockedPins) % lineSet.length];
 }
