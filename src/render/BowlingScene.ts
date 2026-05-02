@@ -40,6 +40,7 @@ const THROW_PRE_RELEASE_FRAME_2_MS = 300;
 const THROW_RELEASE_FRAME_DURATION_MS = 260;
 const THROW_RELEASE_FRAME_START_MS = TIMING_TUNING.throwReleaseDelayMs;
 const THROW_PRE_RELEASE_FRAME_3_MS = THROW_RELEASE_FRAME_START_MS - THROW_PRE_RELEASE_FRAME_1_MS - THROW_PRE_RELEASE_FRAME_2_MS;
+const PUBLIC_ASSET_BASE_URL = "./assets/";
 
 const CHARACTER_BILLBOARD_SETTINGS = {
   atlasFrameWidthPx: 512,
@@ -151,12 +152,12 @@ export class BowlingScene {
     this.signageTexture = new THREE.CanvasTexture(this.signageCanvas);
     this.signageTexture.colorSpace = THREE.SRGBColorSpace;
     this.characterThrowTextures = {
-      player: this.createAtlasTexture("/assets/player-billboard-throw-atlas.png", CHARACTER_BILLBOARD_SETTINGS.throwAtlasColumns),
-      rival: this.createAtlasTexture("/assets/rival-billboard-throw-atlas.png", CHARACTER_BILLBOARD_SETTINGS.throwAtlasColumns),
+      player: this.createAtlasTexture(publicAssetUrl("player-billboard-throw-atlas.png"), CHARACTER_BILLBOARD_SETTINGS.throwAtlasColumns),
+      rival: this.createAtlasTexture(publicAssetUrl("rival-billboard-throw-atlas.png"), CHARACTER_BILLBOARD_SETTINGS.throwAtlasColumns),
     };
     this.characterReactionTextures = {
-      player: this.createAtlasTexture("/assets/player-billboard-reaction-atlas.png", CHARACTER_BILLBOARD_SETTINGS.reactionAtlasColumns),
-      rival: this.createAtlasTexture("/assets/rival-billboard-reaction-atlas.png", CHARACTER_BILLBOARD_SETTINGS.reactionAtlasColumns),
+      player: this.createAtlasTexture(publicAssetUrl("player-billboard-reaction-atlas.png"), CHARACTER_BILLBOARD_SETTINGS.reactionAtlasColumns),
+      rival: this.createAtlasTexture(publicAssetUrl("rival-billboard-reaction-atlas.png"), CHARACTER_BILLBOARD_SETTINGS.reactionAtlasColumns),
     };
     this.characterBillboardMaterial = new THREE.MeshBasicMaterial({
       map: this.characterThrowTextures.player,
@@ -385,7 +386,7 @@ export class BowlingScene {
   private createEnvironment(): void {
     this.createBowlingAlleyShell();
 
-    const laneTexture = this.textureLoader.load("/assets/lane-toon-wood.png");
+    const laneTexture = this.textureLoader.load(publicAssetUrl("lane-toon-wood.png"));
     laneTexture.colorSpace = THREE.SRGBColorSpace;
     laneTexture.wrapS = THREE.RepeatWrapping;
     laneTexture.wrapT = THREE.RepeatWrapping;
@@ -997,6 +998,10 @@ function timedAtlasFrame(elapsedMs: number, frameDurationsMs: readonly number[])
 
 function totalFrameDurationMs(frameDurationsMs: readonly number[]): number {
   return frameDurationsMs.reduce((total, duration) => total + duration, 0);
+}
+
+function publicAssetUrl(fileName: string): string {
+  return `${PUBLIC_ASSET_BASE_URL}${fileName}`;
 }
 
 function visibleHudRects(): DOMRect[] {
