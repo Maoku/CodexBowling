@@ -16,7 +16,7 @@ export const INPUT_TUNING = {
 export const TIMING_TUNING = {
   throwReleaseDelayMs: 850,
   rivalThinkDelayMs: 850,
-  resultDisplayMs: 1600,
+  resultDisplayMs: 2100,
   powerWaveCyclesPerSecond: 0.92,
   curveWaveRadiansPerSecond: Math.PI * 1.35,
   curveMeterMax: 0.6,
@@ -137,7 +137,7 @@ export const SCENE_TUNING = {
   cameraLookAtY: 0.18,
   signageCanvasWidth: 1024,
   signageCanvasHeight: 256,
-  signagePlaneWidthMeters: 4.5,
-  signagePlaneHeightMeters: 1.12,
-  signageMessageMaxChars: 28,
+  signagePlaneWidthMeters: 6.4,
+  signagePlaneHeightMeters: 1.62,
+  signageMessageMaxChars: 34,
 } as const;
