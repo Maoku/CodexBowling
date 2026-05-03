@@ -5,7 +5,7 @@ import { INPUT_TUNING, TIMING_TUNING } from "./game/content/tuning";
 import { ThrowInput } from "./game/input/ThrowInput";
 import { createRivalThrow } from "./game/simulation/ai";
 import { MatchState } from "./game/simulation/match";
-import { makeThrowResult, pinsKnockedThisThrow, PIN_COUNT } from "./game/simulation/scoring";
+import { makeThrowResult, pinsKnockedForFrameThrow, PIN_COUNT } from "./game/simulation/scoring";
 import type { ThrowParams } from "./game/types";
 import { BowlingPhysics } from "./physics/BowlingPhysics";
 import { BowlingScene } from "./render/BowlingScene";
@@ -114,7 +114,6 @@ async function bootstrap(): Promise<void> {
       const pinsThatFellBetweenThrows = previousStandingPins.filter((pin) => !currentStandingPins.includes(pin));
       if (pinsThatFellBetweenThrows.length > 0) {
         previousStandingPins = currentStandingPins;
-        frameStartStandingPins = currentStandingPins;
       }
       physics.clearDownedPins(currentStandingPins);
       physics.resetBall(params.laneOffset);
@@ -139,9 +138,8 @@ async function bootstrap(): Promise<void> {
         : snapshot.rivalScore.frames[snapshot.activeFrame];
     const standingPins = physics.standingPins();
     const baseStandingPins = currentFrame.throws.length === 0 ? allPins() : frameStartStandingPins;
-    const totalFrameKnockedPins = pinsKnockedThisThrow(baseStandingPins, standingPins);
     const alreadyScoredPins = currentFrame.throws.reduce((sum, value) => sum + value, 0);
-    const knockedPins = Math.max(0, totalFrameKnockedPins - alreadyScoredPins);
+    const knockedPins = pinsKnockedForFrameThrow(baseStandingPins, standingPins, alreadyScoredPins);
     physics.stopPinMotion();
     const result = makeThrowResult(knockedPins, standingPins, currentFrame);
 

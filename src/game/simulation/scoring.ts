@@ -17,6 +17,16 @@ export function pinsKnockedThisThrow(previousStanding: number[], currentStanding
   return previousStanding.filter((pin) => !currentStanding.includes(pin)).length;
 }
 
+export function pinsKnockedForFrameThrow(
+  frameStartStanding: number[],
+  currentStanding: number[],
+  alreadyScoredPins: number,
+): number {
+  const totalFrameKnockedPins = pinsKnockedThisThrow(frameStartStanding, currentStanding);
+  const remainingPins = Math.max(0, PIN_COUNT - alreadyScoredPins);
+  return Math.max(0, Math.min(remainingPins, totalFrameKnockedPins - alreadyScoredPins));
+}
+
 export function makeThrowResult(
   knockedPins: number,
   standingPins: number[],
