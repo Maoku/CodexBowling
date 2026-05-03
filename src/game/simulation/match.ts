@@ -51,6 +51,7 @@ export class MatchState {
       this.rivalScore = applyThrow(this.rivalScore, this.activeFrame, result);
     }
 
+    const isSecondThrow = result.throwIndex > 0;
     const reaction = isSplitResult(result)
       ? matchSplitResultLine(this.activeBowler, result)
       : this.activeBowler === "player"
@@ -58,8 +59,12 @@ export class MatchState {
           ? MATCH_TEXT.strike
           : result.isSpare
             ? MATCH_TEXT.spare
-            : MATCH_TEXT.playerResult(result.knockedPins)
-        : MATCH_TEXT.rivalResult(result.knockedPins);
+            : isSecondThrow
+              ? MATCH_TEXT.playerSecondResult(result.knockedPins)
+              : MATCH_TEXT.playerResult(result.knockedPins)
+        : isSecondThrow
+          ? MATCH_TEXT.rivalSecondResult(result.knockedPins)
+          : MATCH_TEXT.rivalResult(result.knockedPins);
     this.phase = "showingResult";
     this.message = reaction;
   }

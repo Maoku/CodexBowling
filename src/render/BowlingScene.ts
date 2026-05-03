@@ -782,7 +782,7 @@ export class BowlingScene {
       this.characterBillboardMaterial.map = reactionTexture;
       this.characterBillboardMaterial.opacity = 1;
       setAtlasFrame(reactionTexture, reactionFrame, CHARACTER_BILLBOARD_SETTINGS.reactionAtlasColumns);
-      this.placeSceneCharacterBillboard(CHARACTER_BILLBOARD_SETTINGS.afterThrow, bounce, this.throwLaneOffset);
+      this.placeSceneCharacterBillboard(CHARACTER_BILLBOARD_SETTINGS.afterThrow, bounce, 0);
     }
 
     this.characterBillboardMaterial.needsUpdate = true;
@@ -1025,7 +1025,7 @@ function reactionFrameForResult(result: ThrowResult | undefined): number {
   if (!result) return 3;
   if (result.isStrike || result.isSpare) return 0;
   if (result.knockedPins === 0) return 1;
-  if (isSplitLikeStandingPins(result.standingPins)) return 2;
+  if (result.throwIndex === 0 && isSplitLikeStandingPins(result.standingPins)) return 2;
   return 3;
 }
 

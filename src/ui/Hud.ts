@@ -228,10 +228,11 @@ export class Hud {
     this.resultOverlay.style.display = isComplete ? "grid" : "none";
     if (!isComplete) return;
 
-    const playerWon = snapshot.playerScore.total >= snapshot.rivalScore.total;
-    this.resultImage.src = assetUrl(playerWon ? ASSET_PATHS.resultWin : ASSET_PATHS.resultLose);
-    this.resultTitle.textContent = playerWon ? UI_TEXT.victory : UI_TEXT.rivalWins;
-    this.resultCopy.textContent = playerWon ? UI_TEXT.resultWinCopy : UI_TEXT.resultLoseCopy;
+    const playerWon = snapshot.playerScore.total > snapshot.rivalScore.total;
+    const rivalWon = snapshot.playerScore.total < snapshot.rivalScore.total;
+    this.resultImage.src = assetUrl(playerWon ? ASSET_PATHS.resultWin : rivalWon ? ASSET_PATHS.resultLose : ASSET_PATHS.resultDraw);
+    this.resultTitle.textContent = playerWon ? UI_TEXT.victory : rivalWon ? UI_TEXT.rivalWins : UI_TEXT.draw;
+    this.resultCopy.textContent = playerWon ? UI_TEXT.resultWinCopy : rivalWon ? UI_TEXT.resultLoseCopy : UI_TEXT.resultDrawCopy;
     this.resultScoreGrid.innerHTML = "";
     this.resultScoreGrid.appendChild(this.scoreRow(CHARACTER_TEXT.playerName, scoreLabels.player, snapshot.playerScore.total));
     this.resultScoreGrid.appendChild(this.scoreRow(CHARACTER_TEXT.rivalName, scoreLabels.rival, snapshot.rivalScore.total));

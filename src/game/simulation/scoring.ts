@@ -29,6 +29,7 @@ export function makeThrowResult(
   return {
     knockedPins,
     standingPins,
+    throwIndex: frame.throws.length,
     isStrike,
     isSpare,
   };

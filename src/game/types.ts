@@ -17,6 +17,7 @@ export interface ThrowParams {
 export interface ThrowResult {
   knockedPins: number;
   standingPins: number[];
+  throwIndex: number;
   isStrike: boolean;
   isSpare: boolean;
 }

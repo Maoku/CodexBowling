@@ -17,6 +17,7 @@ export const ASSET_PATHS = {
   rivalPortrait: "rival-bowler-portrait.png",
   resultWin: "result-win-v2.png",
   resultLose: "result-lose-v2.png",
+  resultDraw: "result-draw-v2.png",
 } as const;
 
 export const UI_TEXT = {
@@ -29,6 +30,7 @@ export const UI_TEXT = {
   result: "Result",
   victory: "Victory",
   rivalWins: "Rival Wins",
+  draw: "Draw",
   newMatch: "New Match",
   reset: "Reset",
   controlsHint: "A/D: lane, Left/Right: angle, Space: timing",
@@ -41,6 +43,7 @@ export const UI_TEXT = {
   curveLabel: "Curve",
   resultWinCopy: "最後まで集中した一投が、勝負を決めました。",
   resultLoseCopy: "今日はリンカが一枚上手。次のレーンで取り返しましょう。",
+  resultDrawCopy: "互いに譲らない好勝負。次の一投で決着をつけましょう。",
   resultImageAlt: "Match result illustration",
 } as const;
 
@@ -64,7 +67,9 @@ export const MATCH_TEXT = {
     ],
   },
   playerResult: (pins: number) => `${pins}本。次で拾いにいこう。`,
+  playerSecondResult: (pins: number) => `${pins}本でフィニッシュ。次のフレームで流れを作ろう。`,
   rivalResult: (pins: number) => `ライバルは${pins}本倒した。`,
+  rivalSecondResult: (pins: number) => `リンカの二投目は${pins}本。フレームを締めてきた。`,
   playerSecondThrow: "残りピンを狙ってもう一投。",
   rivalSecondThrow: "ライバルの二投目。",
   rivalTurn: "ライバルの番。投球フォームを観察しよう。",
@@ -85,19 +90,22 @@ export const PERFORMANCE_TEXT = {
   playerNextThrow: "次のピン、ちゃんと拾うよ。",
   rivalReadingLane: "リンカがレーンを読んでいる。",
   matchComplete: (snapshot: MatchSnapshot) => snapshot.message,
-  resultLine: (bowler: BowlerId, result: Pick<ThrowResult, "isStrike" | "isSpare" | "knockedPins" | "standingPins">) => {
+  resultLine: (bowler: BowlerId, result: Pick<ThrowResult, "isStrike" | "isSpare" | "knockedPins" | "standingPins" | "throwIndex">) => {
+    const isSecondThrow = result.throwIndex > 0;
     if (bowler === "player") {
       if (result.isStrike) return "やった、ぜんぶ倒れた！今の見てた？";
-      if (result.isSpare) return "ふう、ちゃんと拾えた。まだ勝負はここから。";
-      if (result.knockedPins === 0) return "うそ、ガター？今のは忘れて、次！";
+      if (result.isSpare) return isSecondThrow ? "ふう、ちゃんと拾えた。これでフレームはまとまったね。" : "ふう、ちゃんと拾えた。まだ勝負はここから。";
+      if (result.knockedPins === 0) return isSecondThrow ? "拾いきれなかったかあ。次のフレームで立て直すよ。" : "うそ、ガター？今のは忘れて、次！";
       if (isSplitResult(result)) return chooseSplitLine("player", result, PERFORMANCE_SPLIT_LINES);
+      if (isSecondThrow) return `${result.knockedPins}本追加。次はもっときれいに締めたいな。`;
       return `${result.knockedPins}本かあ。残りはきっちり拾うよ。`;
     }
 
     if (result.isStrike) return "リンカ: 当然。このレーンは読めてる。";
-    if (result.isSpare) return "リンカ: 最後の一本まで逃さない。";
-    if (result.knockedPins === 0) return "リンカ: くっ、今のはレーンが悪いだけ。";
+    if (result.isSpare) return isSecondThrow ? "リンカ: 当然。残りは計算通りに処理したわ。" : "リンカ: 最後の一本まで逃さない。";
+    if (result.knockedPins === 0) return isSecondThrow ? "リンカ: 仕留め損ねたわね。次で修正する。" : "リンカ: くっ、今のはレーンが悪いだけ。";
     if (isSplitResult(result)) return chooseSplitLine("rival", result, PERFORMANCE_SPLIT_LINES);
+    if (isSecondThrow) return `リンカ: ${result.knockedPins}本追加。悪くない締め方ね。`;
     return `リンカ: ${result.knockedPins}本。まだ計算通りよ。`;
   },
 } as const;
@@ -132,8 +140,8 @@ export function matchSplitResultLine(bowler: BowlerId, result: Pick<ThrowResult,
   return chooseSplitLine(bowler, result, MATCH_TEXT.splitResults);
 }
 
-export function isSplitResult(result: Pick<ThrowResult, "isStrike" | "isSpare" | "knockedPins" | "standingPins">): boolean {
-  if (result.isStrike || result.isSpare || result.knockedPins === 0) return false;
+export function isSplitResult(result: Pick<ThrowResult, "isStrike" | "isSpare" | "knockedPins" | "standingPins" | "throwIndex">): boolean {
+  if (result.throwIndex > 0 || result.isStrike || result.isSpare || result.knockedPins === 0) return false;
   if (result.standingPins.length < 2 || result.standingPins.includes(1)) return false;
 
   const leftPins = new Set([2, 4, 7, 8]);

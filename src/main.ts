@@ -36,6 +36,7 @@ async function bootstrap(): Promise<void> {
   const scene = new BowlingScene(gameCanvas);
 
   let previousStandingPins = allPins();
+  let frameStartStandingPins = allPins();
   let aiThrowQueued = false;
   let resultAdvanceAt = 0;
   let throwSequence = 0;
@@ -104,13 +105,18 @@ async function bootstrap(): Promise<void> {
       scene.updateAim(params);
     }
 
-    previousStandingPins =
-      activeBowler === "player" && match.currentThrowIndex === 0 ? allPins() : physics.standingPins();
     if (match.currentThrowIndex === 0) {
       physics.resetRack();
       previousStandingPins = allPins();
+      frameStartStandingPins = allPins();
     } else {
-      physics.clearDownedPins(previousStandingPins);
+      const currentStandingPins = physics.standingPins();
+      const pinsThatFellBetweenThrows = previousStandingPins.filter((pin) => !currentStandingPins.includes(pin));
+      if (pinsThatFellBetweenThrows.length > 0) {
+        previousStandingPins = currentStandingPins;
+        frameStartStandingPins = currentStandingPins;
+      }
+      physics.clearDownedPins(currentStandingPins);
       physics.resetBall(params.laneOffset);
     }
 
@@ -126,20 +132,24 @@ async function bootstrap(): Promise<void> {
   }
 
   function finishThrow(): void {
-    const standingPins = physics.standingPins();
-    const knockedPins = pinsKnockedThisThrow(previousStandingPins, standingPins);
-    physics.stopPinMotion();
     const snapshot = match.snapshot;
     const currentFrame =
       snapshot.activeBowler === "player"
         ? snapshot.playerScore.frames[snapshot.activeFrame]
         : snapshot.rivalScore.frames[snapshot.activeFrame];
+    const standingPins = physics.standingPins();
+    const baseStandingPins = currentFrame.throws.length === 0 ? allPins() : frameStartStandingPins;
+    const totalFrameKnockedPins = pinsKnockedThisThrow(baseStandingPins, standingPins);
+    const alreadyScoredPins = currentFrame.throws.reduce((sum, value) => sum + value, 0);
+    const knockedPins = Math.max(0, totalFrameKnockedPins - alreadyScoredPins);
+    physics.stopPinMotion();
     const result = makeThrowResult(knockedPins, standingPins, currentFrame);
 
     match.applyResult(result);
     setPerformance(match.snapshot.activeBowler, resultAction(result), resultLine(match.snapshot.activeBowler, result), throwSequence + 1);
     throwSequence += 1;
     resultAdvanceAt = window.performance.now() + TIMING_TUNING.resultDisplayMs;
+    previousStandingPins = standingPins;
     aiThrowQueued = false;
   }
 
@@ -147,6 +157,7 @@ async function bootstrap(): Promise<void> {
     match.reset();
     physics.resetRack();
     previousStandingPins = allPins();
+    frameStartStandingPins = allPins();
     aiThrowQueued = false;
     resultAdvanceAt = 0;
     timingStage = "ready";
@@ -261,7 +272,7 @@ async function bootstrap(): Promise<void> {
 
   function resultLine(
     bowler: PerformanceState["bowler"],
-    result: { isStrike: boolean; isSpare: boolean; knockedPins: number; standingPins: number[] },
+    result: { isStrike: boolean; isSpare: boolean; knockedPins: number; standingPins: number[]; throwIndex: number },
   ): string {
     return PERFORMANCE_TEXT.resultLine(bowler, result);
   }
